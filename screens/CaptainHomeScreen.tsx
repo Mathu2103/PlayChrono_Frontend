@@ -1,106 +1,145 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export const CaptainHomeScreen: React.FC = () => {
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [selectedDate, setSelectedDate] = useState('Today');
+
+    const NOTIFICATIONS = [
+        { id: '1', message: 'Main Ground A is available tomorrow at 4 PM.', time: '10m ago', read: false },
+        { id: '2', message: 'New slot opened at Indoor Court.', time: '1h ago', read: true },
+    ];
+
     return (
         <ScreenWrapper style={styles.screen}>
+            <View style={styles.header}>
+                <View style={styles.userInfo}>
+                    <View style={styles.avatarContainer}>
+                        {/* Placeholder Avatar */}
+                        <Text style={styles.avatarText}>CA</Text>
+                    </View>
+                    <View>
+                        <Text style={styles.greeting}>Hi, Captain Alex</Text>
+                        <Text style={styles.teamName}>The Tigers</Text>
+                    </View>
+                </View>
+                <View style={styles.headerIcons}>
+                    <TouchableOpacity style={styles.iconButton}>
+                        <Ionicons name="calendar-outline" size={24} color={COLORS.text} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.iconButton}
+                        onPress={() => setShowNotifications(!showNotifications)}
+                    >
+                        <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* Notification Dropdown */}
+            {showNotifications && (
+                <View style={styles.notificationDropdown}>
+                    <Text style={styles.dropdownTitle}>Notifications</Text>
+                    {NOTIFICATIONS.map(note => (
+                        <TouchableOpacity key={note.id} style={[styles.notificationItem, !note.read && styles.unreadNotification]}>
+                            <View style={styles.notificationContent}>
+                                <Text style={styles.notificationMessage}>{note.message}</Text>
+                                <Text style={styles.notificationTime}>{note.time}</Text>
+                            </View>
+                            {!note.read && <View style={styles.unreadDot} />}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
+
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
 
-                {/* Header */}
-                <View style={styles.header}>
-                    <View>
-                        <Text style={styles.greeting}>Good Morning,</Text>
-                        <Text style={styles.userName}>Captain Alex</Text>
-                    </View>
-                    <TouchableOpacity style={styles.notificationButton}>
-                        <Text style={styles.notificationIcon}>🔔</Text>
-                        <View style={styles.badge} />
-                    </TouchableOpacity>
-                </View>
+                {/* Upcoming Booking Card - Removed via user request */}
 
-                {/* Weather / Date Widget */}
-                <View style={styles.weatherWidget}>
-                    <View>
-                        <Text style={styles.dateText}>Wed, 17 Dec</Text>
-                        <Text style={styles.weatherText}>Sunny, 28°C</Text>
-                    </View>
-                    <Text style={styles.weatherIcon}>☀️</Text>
-                </View>
+                {/* Find a Slot Section */}
+                <Text style={styles.sectionTitle}>Find a Slot</Text>
 
-                {/* Upcoming Booking Card */}
-                <Text style={styles.sectionTitle}>Up Next</Text>
-                <TouchableOpacity style={styles.matchCard}>
-                    <View style={styles.matchHeader}>
-                        <Text style={styles.matchType}>Football • 5v5</Text>
-                        <View style={styles.statusBadge}>
-                            <Text style={styles.statusText}>Confirmed</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.matchInfo}>
-                        <View style={styles.matchDetail}>
-                            <Text style={styles.detailLabel}>Time</Text>
-                            <Text style={styles.detailValue}>06:00 PM</Text>
-                        </View>
-                        <View style={styles.divider} />
-                        <View style={styles.matchDetail}>
-                            <Text style={styles.detailLabel}>Ground</Text>
-                            <Text style={styles.detailValue}>Main Turf A</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.teamInfo}>
-                        <View style={styles.avatarGroup}>
-                            <View style={[styles.avatar, { backgroundColor: '#FFCDD2' }]}><Text>A</Text></View>
-                            <View style={[styles.avatar, { backgroundColor: '#E1BEE7', marginLeft: -10 }]}><Text>B</Text></View>
-                            <View style={[styles.avatar, { backgroundColor: '#C5CAE9', marginLeft: -10 }]}><Text>+3</Text></View>
-                        </View>
-                        <Text style={styles.vsText}>vs</Text>
-                        <Text style={styles.opponentName}>Rival Titans</Text>
-                    </View>
-                </TouchableOpacity>
-
-                {/* Quick Actions */}
-                <Text style={styles.sectionTitle}>Quick Actions</Text>
-                <View style={styles.actionGrid}>
-                    <TouchableOpacity style={styles.actionCard}>
-                        <View style={[styles.iconContainer, { backgroundColor: '#E3F2FD' }]}>
-                            <Text>📅</Text>
-                        </View>
-                        <Text style={styles.actionText}>New Booking</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.actionCard}>
-                        <View style={[styles.iconContainer, { backgroundColor: '#E8F5E9' }]}>
-                            <Text>👥</Text>
-                        </View>
-                        <Text style={styles.actionText}>Manage Team</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.actionCard}>
-                        <View style={[styles.iconContainer, { backgroundColor: '#FFF3E0' }]}>
-                            <Text>📢</Text>
-                        </View>
-                        <Text style={styles.actionText}>Notices</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Recent Activity */}
-                <Text style={styles.sectionTitle}>Recent Activity</Text>
-                <View style={styles.activityList}>
-                    {[1, 2, 3].map((_, i) => (
-                        <View key={i} style={styles.activityItem}>
-                            <View style={styles.activityIcon}>
-                                <Text>📌</Text>
-                            </View>
-                            <View style={styles.activityContent}>
-                                <Text style={styles.activityTitle}>Booking Request Approved</Text>
-                                <Text style={styles.activityTime}>2 hours ago</Text>
-                            </View>
-                        </View>
+                {/* Date Tabs */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer}>
+                    {['Today', 'Tomorrow', 'Wed 18 Oct', 'Thu 19 Oct'].map((item) => (
+                        <TouchableOpacity
+                            key={item}
+                            style={[styles.tab, selectedDate === item && styles.activeTab]}
+                            onPress={() => setSelectedDate(item)}
+                        >
+                            <Text style={[styles.tabText, selectedDate === item && styles.activeTabText]}>
+                                {item}
+                            </Text>
+                        </TouchableOpacity>
                     ))}
+                </ScrollView>
+
+                {/* Slots List */}
+                <View style={styles.slotList}>
+                    {/* Available Slot */}
+                    <View style={styles.slotCard}>
+                        <View style={styles.slotContent}>
+                            <View style={styles.timeIconBadge}>
+                                <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+                            </View>
+                            <View style={styles.slotDetails}>
+                                <Text style={styles.slotTime}>14:00 - 15:30</Text>
+                                <Text style={styles.slotGround}>Turf Ground B • <Text style={{ color: COLORS.success }}>Free</Text></Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.slotActions}>
+                            <View style={styles.statusBadgeAvailable}>
+                                <Text style={styles.statusTextAvailable}>Available</Text>
+                            </View>
+                            <TouchableOpacity style={styles.bookButton}>
+                                <Text style={styles.bookButtonText}>Book Slot</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                    {/* Booked Slot */}
+                    <View style={styles.slotCard}>
+                        <View style={styles.slotContent}>
+                            <View style={[styles.timeIconBadge, styles.iconBadgeDisabled]}>
+                                <Ionicons name="time-outline" size={20} color={COLORS.textSecondary} />
+                            </View>
+                            <View style={styles.slotDetails}>
+                                <Text style={styles.slotTime}>15:30 - 17:00</Text>
+                                <Text style={styles.slotGround}>Turf Ground A • Booked</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.slotActions}>
+                            <TouchableOpacity style={styles.bookedButton} disabled>
+                                <Text style={styles.bookedButtonText}>Booked</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Another Available Slot for demo */}
+                    <View style={styles.slotCard}>
+                        <View style={styles.slotContent}>
+                            <View style={styles.timeIconBadge}>
+                                <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+                            </View>
+                            <View style={styles.slotDetails}>
+                                <Text style={styles.slotTime}>18:00 - 19:30</Text>
+                                <Text style={styles.slotGround}>Main Ground B • <Text style={{ color: COLORS.success }}>Free</Text></Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.slotActions}>
+                            <View style={styles.statusBadgeAvailable}>
+                                <Text style={styles.statusTextAvailable}>Available</Text>
+                            </View>
+                            <TouchableOpacity style={styles.bookButton}>
+                                <Text style={styles.bookButtonText}>Book Slot</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
 
             </ScrollView>
@@ -110,229 +149,317 @@ export const CaptainHomeScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
     screen: {
-        backgroundColor: '#F8F9FE', // Slightly lighter background for dashboard
+        backgroundColor: '#F4F6F9', // Light greyish background resembling the design
     },
     container: {
-        padding: SPACING.l,
-        paddingBottom: 40,
+        padding: SPACING.m,
+        paddingBottom: 80,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: SPACING.l,
-    },
-    greeting: {
-        fontSize: 14,
-        color: COLORS.textSecondary,
-    },
-    userName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: COLORS.text,
-    },
-    notificationButton: {
-        width: 44,
-        height: 44,
+        paddingHorizontal: SPACING.m,
+        paddingVertical: SPACING.m,
         backgroundColor: COLORS.surface,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
-    notificationIcon: {
-        fontSize: 20,
-    },
-    badge: {
-        position: 'absolute',
-        top: 10,
-        right: 12,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: COLORS.error,
-        borderWidth: 1.5,
-        borderColor: COLORS.surface,
-    },
-    weatherWidget: {
+    userInfo: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+    },
+    avatarContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         backgroundColor: COLORS.primary,
-        padding: SPACING.m,
-        borderRadius: RADIUS.l,
-        marginBottom: SPACING.xl,
-    },
-    dateText: {
-        color: 'rgba(255,255,255,0.8)',
-        fontSize: 14,
-        marginBottom: 4,
-    },
-    weatherText: {
-        color: COLORS.surface,
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    weatherIcon: {
-        fontSize: 32,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: COLORS.text,
-        marginBottom: SPACING.m,
-    },
-    matchCard: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.l,
-        padding: SPACING.m,
-        marginBottom: SPACING.xl,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 3,
-    },
-    matchHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: SPACING.m,
-    },
-    matchType: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: COLORS.textSecondary,
-    },
-    statusBadge: {
-        backgroundColor: '#E8F5E9',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: RADIUS.s,
-    },
-    statusText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#2E7D32',
-    },
-    matchInfo: {
-        flexDirection: 'row',
-        marginBottom: SPACING.m,
-        backgroundColor: '#F5F5F5',
-        padding: SPACING.s,
-        borderRadius: RADIUS.m,
-    },
-    matchDetail: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    divider: {
-        width: 1,
-        backgroundColor: '#E0E0E0',
-        marginVertical: 4,
-    },
-    detailLabel: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        marginBottom: 2,
-    },
-    detailValue: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: COLORS.text,
-    },
-    teamInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    avatarGroup: {
-        flexDirection: 'row',
-    },
-    avatar: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: COLORS.surface,
-    },
-    vsText: {
-        fontSize: 14,
-        color: COLORS.textSecondary,
-        fontWeight: '600',
-    },
-    opponentName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.text,
-    },
-    actionGrid: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: SPACING.xl,
-    },
-    actionCard: {
-        backgroundColor: COLORS.surface,
-        width: '30%',
-        padding: SPACING.m,
-        borderRadius: RADIUS.m,
-        alignItems: 'center',
-        gap: SPACING.s,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    actionText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: COLORS.text,
-        textAlign: 'center',
-    },
-    activityList: {
-        gap: SPACING.m,
-    },
-    activityItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.surface,
-        padding: SPACING.m,
-        borderRadius: RADIUS.m,
-    },
-    activityIcon: {
-        width: 40,
-        height: 40,
-        backgroundColor: '#F5F5F5',
-        borderRadius: RADIUS.s,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: SPACING.m,
     },
-    activityContent: {
-        flex: 1,
+    avatarText: {
+        color: COLORS.surface,
+        fontWeight: 'bold',
+        fontSize: 18,
     },
-    activityTitle: {
-        fontSize: 14,
-        fontWeight: '600',
+    greeting: {
+        fontSize: 18,
+        fontWeight: 'bold',
         color: COLORS.text,
     },
-    activityTime: {
+    teamName: {
+        fontSize: 14,
+        color: COLORS.primary, // Using primary color for team name as seen in some designs
+        fontWeight: '500',
+    },
+    headerIcons: {
+        flexDirection: 'row',
+        gap: SPACING.m,
+    },
+    iconButton: {
+        padding: 4,
+    },
+
+    // Card Styles
+    card: {
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.l,
+        padding: SPACING.m,
+        marginBottom: SPACING.l,
+        ...SHADOWS.card,
+    },
+    cardHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: SPACING.m,
+    },
+    matchInfo: {
+        flex: 1,
+    },
+    upcomingBadge: {
+        backgroundColor: '#FFF3E0', // Light orange background
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: RADIUS.s,
+        marginBottom: SPACING.s,
+    },
+    upcomingText: {
+        color: '#FF9800', // Orange text
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    matchTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginBottom: SPACING.xs,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    matchDetailText: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        marginLeft: 4,
+    },
+    fieldPreview: {
+        width: 80,
+        height: 80,
+        backgroundColor: '#4CAF50',
+        borderRadius: RADIUS.m,
+        marginLeft: SPACING.m,
+        position: 'relative',
+        overflow: 'hidden',
+        borderWidth: 2,
+        borderColor: '#81C784',
+    },
+    fieldLineCenter: {
+        position: 'absolute',
+        top: '50%',
+        left: 0,
+        right: 0,
+        height: 1,
+        backgroundColor: 'rgba(255,255,255,0.5)',
+    },
+    fieldCircle: {
+        position: 'absolute',
+        top: '25%',
+        left: '25%',
+        width: '50%',
+        height: '50%',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.5)',
+        borderRadius: 40,
+    },
+    cardActions: {
+        flexDirection: 'row',
+        gap: SPACING.m,
+    },
+    actionButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: RADIUS.m,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    primaryBtn: {
+        backgroundColor: COLORS.primary,
+    },
+    primaryBtnText: {
+        color: COLORS.surface,
+        fontWeight: 'bold',
+    },
+    secondaryBtn: {
+        backgroundColor: '#F5F5F5',
+    },
+    secondaryBtnText: {
+        color: COLORS.text,
+        fontWeight: '600',
+    },
+
+    // Find Slot Styles
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginBottom: SPACING.m,
+    },
+    tabsContainer: {
+        marginBottom: SPACING.m,
+    },
+    tab: {
+        paddingHorizontal: SPACING.l,
+        paddingVertical: SPACING.s,
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.l,
+        marginRight: SPACING.s,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    activeTab: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    tabText: {
+        color: COLORS.textSecondary,
+        fontWeight: '600',
+    },
+    activeTabText: {
+        color: COLORS.surface,
+    },
+
+    // Slot List Styles
+    slotList: {
+        gap: SPACING.m,
+    },
+    slotCard: {
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.l,
+        padding: SPACING.m,
+        ...SHADOWS.card,
+    },
+    slotContent: {
+        flexDirection: 'row',
+        marginBottom: SPACING.m,
+        alignItems: 'center',
+    },
+    timeIconBadge: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#E3F2FD', // Light blue
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: SPACING.m,
+    },
+    iconBadgeDisabled: {
+        backgroundColor: '#F5F5F5',
+    },
+    timeIcon: {
+        fontSize: 18,
+    },
+    slotDetails: {
+        flex: 1,
+    },
+    slotTime: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: COLORS.text,
+    },
+    slotGround: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+    },
+    slotActions: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    statusBadgeAvailable: {
+        backgroundColor: '#E8F5E9',
+        paddingHorizontal: SPACING.s,
+        paddingVertical: 4,
+        borderRadius: RADIUS.s,
+    },
+    statusTextAvailable: {
+        color: '#2E7D32',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    bookButton: {
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: SPACING.l,
+        paddingVertical: 8,
+        borderRadius: RADIUS.m,
+    },
+    bookButtonText: {
+        color: COLORS.surface,
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    bookedButton: {
+        flex: 1,
+        backgroundColor: '#F5F5F5',
+        paddingVertical: 10,
+        borderRadius: RADIUS.m,
+        alignItems: 'center',
+    },
+    bookedButtonText: {
+        color: COLORS.textSecondary,
+        fontWeight: '600',
+    },
+
+    // Notification Styles
+    notificationDropdown: {
+        position: 'absolute',
+        top: 80,
+        right: SPACING.m,
+        width: 300,
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.m,
+        ...SHADOWS.card,
+        zIndex: 1000,
+        padding: SPACING.m,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    dropdownTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginBottom: SPACING.s,
+    },
+    notificationItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: SPACING.s,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    unreadNotification: {
+        backgroundColor: '#F0F7FF', // Very light blue for unread
+        marginHorizontal: -SPACING.m,
+        paddingHorizontal: SPACING.m,
+    },
+    notificationContent: {
+        flex: 1,
+    },
+    notificationMessage: {
+        fontSize: 14,
+        color: COLORS.text,
+        marginBottom: 2,
+    },
+    notificationTime: {
         fontSize: 12,
         color: COLORS.textSecondary,
-        marginTop: 2,
+    },
+    unreadDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: COLORS.primary,
+        marginLeft: SPACING.s,
     },
 });
