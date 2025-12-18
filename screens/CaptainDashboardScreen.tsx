@@ -9,16 +9,23 @@ import { Text, View } from 'react-native';
 
 const Tab = createBottomTabNavigator();
 
-// Simple Icon component helper since we don't have vector icons set up yet
+import { Ionicons } from '@expo/vector-icons';
+
+// Simple Icon component helper using Ionicons
 const TabIcon = ({ focused, label }: { focused: boolean; label: string }) => {
+    let iconName: keyof typeof Ionicons.glyphMap = 'help-outline';
+
+    if (label === 'Schedule') {
+        iconName = focused ? 'calendar' : 'calendar-outline';
+    } else if (label === 'My Bookings') {
+        iconName = focused ? 'ticket' : 'ticket-outline';
+    } else if (label === 'Profile') {
+        iconName = focused ? 'person' : 'person-outline';
+    }
+
     return (
-        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
-                {label === 'Home' && '🏠'}
-                {label === 'Book' && '📅'}
-                {label === 'Team' && '👥'}
-                {label === 'Profile' && '👤'}
-            </Text>
+        <View style={{ alignItems: 'center', justifyContent: 'center', top: 4 }}>
+            <Ionicons name={iconName} size={24} color={focused ? COLORS.primary : COLORS.textSecondary} />
         </View>
     );
 };
@@ -44,9 +51,8 @@ export const CaptainDashboardScreen: React.FC = () => {
                 ),
             })}
         >
-            <Tab.Screen name="Home" component={CaptainHomeScreen} />
-            <Tab.Screen name="Book" component={CaptainBookingsScreen} />
-            <Tab.Screen name="Team" component={CaptainTeamScreen} />
+            <Tab.Screen name="Schedule" component={CaptainHomeScreen} />
+            <Tab.Screen name="My Bookings" component={CaptainBookingsScreen} />
             <Tab.Screen name="Profile" component={CaptainProfileScreen} />
         </Tab.Navigator>
     );
