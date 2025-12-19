@@ -11,7 +11,20 @@ import { COLORS } from '../theme';
 import { Text, View } from 'react-native';
 import { RootStackParamList } from '../types';
 
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { CaptainCalendarScreen } from './CaptainCalendarScreen';
+
 const Tab = createBottomTabNavigator();
+const ScheduleStack = createNativeStackNavigator();
+
+const ScheduleStackNavigator = () => {
+    return (
+        <ScheduleStack.Navigator screenOptions={{ headerShown: false }}>
+            <ScheduleStack.Screen name="CaptainHome" component={CaptainHomeScreen} />
+            <ScheduleStack.Screen name="CaptainCalendar" component={CaptainCalendarScreen} />
+        </ScheduleStack.Navigator>
+    );
+};
 
 // Wrapper component to pass navigation correctly
 const NoticesWrapper = () => {
@@ -63,7 +76,7 @@ export const CaptainDashboardScreen: React.FC = () => {
                 ),
             })}
         >
-            <Tab.Screen name="Schedule" component={CaptainHomeScreen} />
+            <Tab.Screen name="Schedule" component={ScheduleStackNavigator} />
             <Tab.Screen name="My Bookings" component={CaptainBookingsScreen} />
             <Tab.Screen name="Notices" component={NoticesWrapper} />
             <Tab.Screen name="Profile" component={CaptainProfileScreen} />

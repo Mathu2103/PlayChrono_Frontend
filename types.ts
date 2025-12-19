@@ -6,6 +6,7 @@ export type RootStackParamList = {
     SignUp: undefined;
     PlayerDashboard: undefined;
     CaptainDashboard: undefined;
+    CaptainCalendar: undefined;
     AdminDashboard: undefined;
     NoticesList: undefined;
     NoticeDetail: { noticeId: string };

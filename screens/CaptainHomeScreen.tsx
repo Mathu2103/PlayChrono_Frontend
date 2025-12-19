@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 interface Slot {
     id: string;
@@ -22,6 +23,7 @@ const INITIAL_SLOTS: Slot[] = [
 ];
 
 export const CaptainHomeScreen: React.FC = () => {
+    const navigation = useNavigation();
     const [showNotifications, setShowNotifications] = useState(false);
     const [selectedDate, setSelectedDate] = useState('Today');
     const [slots, setSlots] = useState<Slot[]>(INITIAL_SLOTS);
@@ -51,7 +53,10 @@ export const CaptainHomeScreen: React.FC = () => {
                     </View>
                 </View>
                 <View style={styles.headerIcons}>
-                    <TouchableOpacity style={styles.iconButton}>
+                    <TouchableOpacity
+                        style={styles.iconButton}
+                        onPress={() => navigation.navigate('CaptainCalendar')}
+                    >
                         <Ionicons name="calendar-outline" size={24} color={COLORS.text} />
                     </TouchableOpacity>
                     <TouchableOpacity
