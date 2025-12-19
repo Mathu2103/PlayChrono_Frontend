@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ interface Slot {
     ground: string;
     date: string;
     status: 'available' | 'booked';
+    purpose?: string;
 }
 
 const INITIAL_SLOTS: Slot[] = [
@@ -23,14 +24,35 @@ const INITIAL_SLOTS: Slot[] = [
 ];
 
 export const CaptainHomeScreen: React.FC = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
     const [showNotifications, setShowNotifications] = useState(false);
     const [selectedDate, setSelectedDate] = useState('Today');
     const [slots, setSlots] = useState<Slot[]>(INITIAL_SLOTS);
 
     const handleBookSlot = (id: string) => {
+        Alert.alert(
+            "Booking Purpose",
+            "Please select the purpose for this booking:",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Practice",
+                    onPress: () => confirmBooking(id, 'Practice')
+                },
+                {
+                    text: "Friendly Match",
+                    onPress: () => confirmBooking(id, 'Friendly Match')
+                }
+            ]
+        );
+    };
+
+    const confirmBooking = (id: string, purpose: string) => {
         setSlots(prevSlots => prevSlots.map(slot =>
-            slot.id === id ? { ...slot, status: 'booked' } : slot
+            slot.id === id ? { ...slot, status: 'booked', purpose: purpose } : slot
         ));
     };
 
