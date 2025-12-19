@@ -4,9 +4,33 @@ import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 
+interface Slot {
+    id: string;
+    time: string;
+    ground: string;
+    date: string;
+    status: 'available' | 'booked';
+}
+
+const INITIAL_SLOTS: Slot[] = [
+    { id: '1', time: '14:00 - 15:30', ground: 'Turf Ground B', date: 'Today', status: 'available' },
+    { id: '2', time: '15:30 - 17:00', ground: 'Turf Ground A', date: 'Today', status: 'booked' },
+    { id: '3', time: '18:00 - 19:30', ground: 'Main Ground B', date: 'Today', status: 'available' },
+    { id: '4', time: '10:00 - 11:30', ground: 'Main Ground A', date: 'Tomorrow', status: 'available' },
+    { id: '5', time: '16:00 - 17:00', ground: 'Indoor Court', date: 'Wed 18 Oct', status: 'available' },
+    { id: '6', time: '09:00 - 10:00', ground: 'Turf Ground A', date: 'Thu 19 Oct', status: 'available' },
+];
+
 export const CaptainHomeScreen: React.FC = () => {
     const [showNotifications, setShowNotifications] = useState(false);
     const [selectedDate, setSelectedDate] = useState('Today');
+    const [slots, setSlots] = useState<Slot[]>(INITIAL_SLOTS);
+
+    const handleBookSlot = (id: string) => {
+        setSlots(prevSlots => prevSlots.map(slot =>
+            slot.id === id ? { ...slot, status: 'booked' } : slot
+        ));
+    };
 
     const NOTIFICATIONS = [
         { id: '1', message: 'Main Ground A is available tomorrow at 4 PM.', time: '10m ago', read: false },
@@ -59,10 +83,10 @@ export const CaptainHomeScreen: React.FC = () => {
 
                 {/* Upcoming Booking Card - Removed via user request */}
 
+                {/* Date Tabs */}
                 {/* Find a Slot Section */}
                 <Text style={styles.sectionTitle}>Find a Slot</Text>
 
-                {/* Date Tabs */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer}>
                     {['Today', 'Tomorrow', 'Wed 18 Oct', 'Thu 19 Oct'].map((item) => (
                         <TouchableOpacity
@@ -79,67 +103,56 @@ export const CaptainHomeScreen: React.FC = () => {
 
                 {/* Slots List */}
                 <View style={styles.slotList}>
-                    {/* Available Slot */}
-                    <View style={styles.slotCard}>
-                        <View style={styles.slotContent}>
-                            <View style={styles.timeIconBadge}>
-                                <Ionicons name="time-outline" size={20} color={COLORS.primary} />
-                            </View>
-                            <View style={styles.slotDetails}>
-                                <Text style={styles.slotTime}>14:00 - 15:30</Text>
-                                <Text style={styles.slotGround}>Turf Ground B • <Text style={{ color: COLORS.success }}>Free</Text></Text>
-                            </View>
-                        </View>
+                    {slots
+                        .filter(slot => slot.date === selectedDate)
+                        .map((slot) => (
+                            <View key={slot.id} style={styles.slotCard}>
+                                <View style={styles.slotContent}>
+                                    <View style={[styles.timeIconBadge, slot.status === 'booked' && styles.iconBadgeDisabled]}>
+                                        <Ionicons
+                                            name="time-outline"
+                                            size={20}
+                                            color={slot.status === 'booked' ? COLORS.textSecondary : COLORS.primary}
+                                        />
+                                    </View>
+                                    <View style={styles.slotDetails}>
+                                        <Text style={styles.slotTime}>{slot.time}</Text>
+                                        <Text style={styles.slotGround}>
+                                            {slot.ground} •{' '}
+                                            <Text style={slot.status === 'booked' ? { color: COLORS.textSecondary } : { color: COLORS.success }}>
+                                                {slot.status === 'booked' ? 'Booked' : 'Free'}
+                                            </Text>
+                                        </Text>
+                                    </View>
+                                </View>
 
-                        <View style={styles.slotActions}>
-                            <View style={styles.statusBadgeAvailable}>
-                                <Text style={styles.statusTextAvailable}>Available</Text>
+                                <View style={styles.slotActions}>
+                                    {slot.status === 'available' ? (
+                                        <>
+                                            <View style={styles.statusBadgeAvailable}>
+                                                <Text style={styles.statusTextAvailable}>Available</Text>
+                                            </View>
+                                            <TouchableOpacity
+                                                style={styles.bookButton}
+                                                onPress={() => handleBookSlot(slot.id)}
+                                            >
+                                                <Text style={styles.bookButtonText}>Book Slot</Text>
+                                            </TouchableOpacity>
+                                        </>
+                                    ) : (
+                                        <TouchableOpacity style={styles.bookedButton} disabled>
+                                            <Text style={styles.bookedButtonText}>Booked</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
                             </View>
-                            <TouchableOpacity style={styles.bookButton}>
-                                <Text style={styles.bookButtonText}>Book Slot</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                    {/* Booked Slot */}
-                    <View style={styles.slotCard}>
-                        <View style={styles.slotContent}>
-                            <View style={[styles.timeIconBadge, styles.iconBadgeDisabled]}>
-                                <Ionicons name="time-outline" size={20} color={COLORS.textSecondary} />
-                            </View>
-                            <View style={styles.slotDetails}>
-                                <Text style={styles.slotTime}>15:30 - 17:00</Text>
-                                <Text style={styles.slotGround}>Turf Ground A • Booked</Text>
-                            </View>
-                        </View>
+                        ))}
 
-                        <View style={styles.slotActions}>
-                            <TouchableOpacity style={styles.bookedButton} disabled>
-                                <Text style={styles.bookedButtonText}>Booked</Text>
-                            </TouchableOpacity>
+                    {slots.filter(slot => slot.date === selectedDate).length === 0 && (
+                        <View style={{ padding: 20, alignItems: 'center' }}>
+                            <Text style={{ color: COLORS.textSecondary }}>No slots available for this date.</Text>
                         </View>
-                    </View>
-
-                    {/* Another Available Slot for demo */}
-                    <View style={styles.slotCard}>
-                        <View style={styles.slotContent}>
-                            <View style={styles.timeIconBadge}>
-                                <Ionicons name="time-outline" size={20} color={COLORS.primary} />
-                            </View>
-                            <View style={styles.slotDetails}>
-                                <Text style={styles.slotTime}>18:00 - 19:30</Text>
-                                <Text style={styles.slotGround}>Main Ground B • <Text style={{ color: COLORS.success }}>Free</Text></Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.slotActions}>
-                            <View style={styles.statusBadgeAvailable}>
-                                <Text style={styles.statusTextAvailable}>Available</Text>
-                            </View>
-                            <TouchableOpacity style={styles.bookButton}>
-                                <Text style={styles.bookButtonText}>Book Slot</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                    )}
                 </View>
 
             </ScrollView>
