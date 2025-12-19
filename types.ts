@@ -7,4 +7,24 @@ export type RootStackParamList = {
     PlayerDashboard: undefined;
     CaptainDashboard: undefined;
     AdminDashboard: undefined;
+    NoticesList: undefined;
+    NoticeDetail: { noticeId: string };
+    CreateNotice: undefined;
 };
+
+export type NoticePriority = 'Urgent' | 'Important' | 'General';
+export type NoticeSport = 'All' | 'Cricket' | 'Football' | 'Basketball' | 'Badminton';
+
+export interface Notice {
+    id: string;
+    title: string;
+    message: string;
+    createdAt: Date;
+    createdBy: {
+        userId: string;
+        name: string;
+        role: 'Admin' | 'Captain';
+    };
+    targetAudience: NoticeSport;
+    priority: NoticePriority;
+}
