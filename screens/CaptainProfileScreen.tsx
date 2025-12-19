@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS, FONTS } from '../theme';
@@ -7,7 +7,46 @@ import { Ionicons } from '@expo/vector-icons';
 
 export const CaptainProfileScreen: React.FC = () => {
     const navigation = useNavigation<any>();
-    const [passwordVisible, setPasswordVisible] = useState(false);
+
+    // Initial data - normally fetched from backend
+    const initialData = {
+        name: 'Captain Alex',
+        sport: 'Badminton',
+        email: 'alex@playchrono.com'
+    };
+
+    const [name, setName] = useState(initialData.name);
+    const [sport, setSport] = useState(initialData.sport);
+    const [email] = useState(initialData.email);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Check for changes
+    const hasChanges = name !== initialData.name || sport !== initialData.sport;
+
+    const handleSave = () => {
+        // Validation
+        if (!name.trim() || !sport.trim()) {
+            Alert.alert('Invalid Input', 'Name and Sport cannot be empty.');
+            return;
+        }
+
+        setIsLoading(true);
+
+        // Simulate API call
+        setTimeout(() => {
+            setIsLoading(false);
+            Alert.alert('Success', 'Profile updated successfully!', [
+                {
+                    text: 'OK',
+                    onPress: () => {
+                        // Navigate back or refresh state
+                        // Since we are on the profile tab, staying here is appropriate.
+                        // Ideally we would update the "initialData" to the new values here.
+                    }
+                }
+            ]);
+        }, 1500);
+    };
 
     return (
         <ScreenWrapper style={styles.screen}>
@@ -26,71 +65,78 @@ export const CaptainProfileScreen: React.FC = () => {
                 <View style={styles.avatarSection}>
                     <View style={styles.avatarContainer}>
                         {/* Placeholder for Image - In real app, use Image component */}
-                        <Text style={styles.avatarText}>CA</Text>
+                        <Text style={styles.avatarText}>{name.substring(0, 2).toUpperCase()}</Text>
                         <TouchableOpacity style={styles.cameraButton}>
                             <Ionicons name="camera" size={16} color={COLORS.surface} />
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity>
-                        <Text style={styles.changePhotoText}>Edit Profile</Text>
+                        <Text style={styles.changePhotoText}>Edit Photo</Text>
                     </TouchableOpacity>
                 </View>
 
                 {/* Form Section */}
                 <View style={styles.formCard}>
-                    {/* Username */}
+                    {/* Name */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Username</Text>
+                        <Text style={styles.label}>Name</Text>
                         <View style={styles.inputContainer}>
                             <Ionicons name="person" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                value="Captain Alex"
-                                placeholder="Username"
+                                value={name}
+                                onChangeText={setName}
+                                placeholder="Full Name"
                                 placeholderTextColor={COLORS.textSecondary}
                             />
                         </View>
                     </View>
 
-                    {/* Password */}
+                    {/* Email (Read Only) */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Password</Text>
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="lock-closed" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
-                            <TextInput
-                                style={styles.input}
-                                value="password123"
-                                secureTextEntry={!passwordVisible}
-                                placeholder="Password"
-                                placeholderTextColor={COLORS.textSecondary}
-                            />
-                            <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
-                                <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={20} color={COLORS.textSecondary} />
-                            </TouchableOpacity>
-                        </View>
-                        <Text style={styles.helperText}>Password must be at least 8 characters.</Text>
-                    </View>
-
-                    {/* Team Affiliation */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Team Affiliation</Text>
+                        <Text style={styles.label}>Email</Text>
                         <View style={[styles.inputContainer, styles.disabledInput]}>
-                            <Ionicons name="people" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+                            <Ionicons name="mail" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                value="The Tigers"
+                                value={email}
                                 editable={false}
-                                placeholder="Team"
+                                placeholder="Email Address"
                             />
                             <Ionicons name="lock-closed" size={16} color={COLORS.textSecondary} />
+                        </View>
+                    </View>
+
+                    {/* Sport */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Sport</Text>
+                        <View style={styles.inputContainer}>
+                            <Ionicons name="trophy-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                value={sport}
+                                onChangeText={setSport}
+                                placeholder="Sport"
+                                placeholderTextColor={COLORS.textSecondary}
+                            />
                         </View>
                     </View>
                 </View>
 
                 {/* Save Button */}
-                <TouchableOpacity style={styles.saveButton}>
-                    <Ionicons name="save-outline" size={20} color={COLORS.surface} style={{ marginRight: 8 }} />
-                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                <TouchableOpacity
+                    style={[styles.saveButton, (!hasChanges || isLoading) && { opacity: 0.5 }]}
+                    onPress={handleSave}
+                    disabled={!hasChanges || isLoading}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator size="small" color={COLORS.surface} />
+                    ) : (
+                        <>
+                            <Ionicons name="save-outline" size={20} color={COLORS.surface} style={{ marginRight: 8 }} />
+                            <Text style={styles.saveButtonText}>Save Changes</Text>
+                        </>
+                    )}
                 </TouchableOpacity>
 
             </ScrollView>
