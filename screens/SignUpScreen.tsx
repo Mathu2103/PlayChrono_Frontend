@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -7,10 +7,35 @@ import { COLORS, SPACING, RADIUS } from '../theme';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
 export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
+    const [role, setRole] = useState<'Student' | 'Captain'>('Student');
+
+
+
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [sportName, setSportName] = useState('');
+    const [teamName, setTeamName] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const handleSignUp = () => {
+        if (password !== confirmPassword) {
+            Alert.alert("Error", "Passwords do not match");
+            return;
+        }
+
+        // Proceed with sign up
+        navigation.navigate('SignIn');
+    };
+
+    const isPasswordStrong = password.length >= 8 && confirmPassword === password && password !== '';
+
     return (
         <ScreenWrapper style={styles.container}>
             <StatusBar style="dark" />
@@ -24,7 +49,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                         onPress={() => navigation.goBack()}
                         style={styles.backButton}
                     >
-                        <Text style={styles.backButtonText}>←</Text>
+                        <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                     </TouchableOpacity>
                     <View style={styles.headerTitles}>
                         <Text style={styles.title}>Create Account</Text>
@@ -32,44 +57,99 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                     </View>
                 </View>
 
+                {/* Role Selection */}
+                <View style={styles.roleSelectorContainer}>
+                    <TouchableOpacity
+                        style={[styles.roleTab, role === 'Student' && styles.activeRoleTab]}
+                        onPress={() => setRole('Student')}
+                    >
+                        <Text style={[styles.roleTabText, role === 'Student' && styles.activeRoleTabText]}>Student</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.roleTab, role === 'Captain' && styles.activeRoleTab]}
+                        onPress={() => setRole('Captain')}
+                    >
+                        <Text style={[styles.roleTabText, role === 'Captain' && styles.activeRoleTabText]}>Captain</Text>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Form */}
                 <View style={styles.form}>
                     <Input
                         label="Full Name"
                         placeholder="John Doe"
+                        value={fullName}
+                        onChangeText={setFullName}
                     />
                     <Input
                         label="University Email"
                         placeholder="john@university.edu"
                         keyboardType="email-address"
                         autoCapitalize="none"
+                        value={email}
+                        onChangeText={setEmail}
                     />
-                    <Input
-                        label="Password"
-                        placeholder="••••••••"
-                        secureTextEntry
-                    />
-                    <Input
-                        label="Confirm Password"
-                        placeholder="••••••••"
-                        secureTextEntry
-                    />
+                    {role === 'Captain' && (
+                        <>
+                            <Input
+                                label="Sport Name"
+                                placeholder="e.g. Football"
+                                value={sportName}
+                                onChangeText={setSportName}
+                            />
+                            <Input
+                                label="Team Name"
+                                placeholder="e.g. The Tigers"
+                                value={teamName}
+                                onChangeText={setTeamName}
+                            />
+                        </>
+                    )}
+                    <View style={styles.passwordInputContainer}>
+                        <Input
+                            label="Password"
+                            placeholder="••••••••"
+                            secureTextEntry
+                            value={password}
+                            onChangeText={setPassword}
+                            containerStyle={{ marginBottom: 0 }}
+                        />
+                        {isPasswordStrong && (
+                            <Text style={styles.passwordStatusInner}>Strong Password</Text>
+                        )}
+                    </View>
+                    <View style={styles.passwordInputContainer}>
+                        <Input
+                            label="Confirm Password"
+                            placeholder="••••••••"
+                            secureTextEntry={!showConfirmPassword}
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            containerStyle={{ marginBottom: 0 }}
+                            rightIcon={showConfirmPassword ? "eye" : "eye-off"}
+                            onRightIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        />
+                        {isPasswordStrong && (
+                            <Text style={styles.passwordStatusInner}>Strong Password</Text>
+                        )}
+                    </View>
+
+
 
                     <Button
                         title="Sign Up"
-                        onPress={() => navigation.navigate('SignIn')}
+                        onPress={handleSignUp}
                         style={styles.signUpButton}
                     />
                 </View>
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>Already have an account?</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
-                        <Text style={styles.signInLink}>Sign In</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.footerText}>Already have an account? <Text style={styles.signInLink} onPress={() => navigation.navigate('SignIn')}>Sign In</Text></Text>
                 </View>
             </ScrollView>
+
+
         </ScreenWrapper>
     );
 };
@@ -83,7 +163,7 @@ const styles = StyleSheet.create({
         padding: SPACING.l,
     },
     header: {
-        marginBottom: SPACING.xl,
+        marginBottom: SPACING.l,
         marginTop: SPACING.m,
     },
     backButton: {
@@ -94,10 +174,8 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.s,
         backgroundColor: COLORS.surface,
         marginBottom: SPACING.m,
-    },
-    backButtonText: {
-        fontSize: 24,
-        color: COLORS.text,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
     headerTitles: {
         gap: SPACING.xs,
@@ -111,20 +189,58 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: COLORS.textSecondary,
     },
+    roleSelectorContainer: {
+        flexDirection: 'row',
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.m,
+        padding: 4,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        marginBottom: SPACING.l,
+    },
+    roleTab: {
+        flex: 1,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderRadius: RADIUS.m - 2,
+    },
+    activeRoleTab: {
+        backgroundColor: COLORS.primary,
+    },
+    roleTabText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.textSecondary,
+    },
+    activeRoleTabText: {
+        color: COLORS.surface,
+    },
     form: {
         flex: 1,
     },
+    passwordInputContainer: {
+        position: 'relative',
+        marginBottom: SPACING.m,
+    },
+    passwordStatusInner: {
+        position: 'absolute',
+        right: SPACING.m,
+        top: 42, // Adjusted to be inside the input area
+        fontSize: 12,
+        color: COLORS.textSecondary,
+        fontWeight: '500',
+    },
+
     signUpButton: {
         height: 56,
-        borderRadius: RADIUS.l,
+        borderRadius: RADIUS.m,
         marginTop: SPACING.m,
+        backgroundColor: COLORS.primary,
     },
     footer: {
-        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: SPACING.xl,
-        gap: SPACING.xs,
         paddingBottom: SPACING.xl,
     },
     footerText: {
@@ -134,6 +250,5 @@ const styles = StyleSheet.create({
     signInLink: {
         color: COLORS.primary,
         fontWeight: '700',
-        fontSize: 16,
     },
 });

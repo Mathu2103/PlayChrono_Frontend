@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 interface Slot {
-    id: string;
+    id: string
     time: string;
     ground: string;
     date: string;

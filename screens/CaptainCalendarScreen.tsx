@@ -29,7 +29,6 @@ const generateDays = (year: number, month: number) => {
 export const CaptainCalendarScreen: React.FC = () => {
     const navigation = useNavigation();
 
-    // Default to a date in 2025 as requested
     const [currentDate, setCurrentDate] = useState(new Date(2025, 9, 1)); // October 2025
     const [selectedDay, setSelectedDay] = useState(18);
 

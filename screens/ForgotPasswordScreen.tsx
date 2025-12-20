@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -9,11 +9,27 @@ import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
-export const SignInScreen: React.FC<Props> = ({ navigation }) => {
+export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+
+    const handleResetPassword = () => {
+        if (!email) {
+            Alert.alert("Error", "Please enter your email address.");
+            return;
+        }
+        // Simulate API call
+        setTimeout(() => {
+            Alert.alert(
+                "Reset Link Sent",
+                "If an account exists for this email, you will receive a password reset link shortly.",
+                [
+                    { text: "OK", onPress: () => navigation.navigate('SignIn') }
+                ]
+            );
+        }, 1000);
+    };
 
     return (
         <ScreenWrapper style={styles.container}>
@@ -31,8 +47,8 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
                         <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                     </TouchableOpacity>
                     <View style={styles.headerTitles}>
-                        <Text style={styles.title}>Welcome Back</Text>
-                        <Text style={styles.subtitle}>Sign in to your account</Text>
+                        <Text style={styles.title}>Forgot Password</Text>
+                        <Text style={styles.subtitle}>Enter your email to reset password</Text>
                     </View>
                 </View>
 
@@ -46,31 +62,12 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
                         value={email}
                         onChangeText={setEmail}
                     />
-                    <Input
-                        label="Password"
-                        placeholder="••••••••"
-                        secureTextEntry
-                        value={password}
-                        onChangeText={setPassword}
-                    />
-
-                    <TouchableOpacity
-                        style={styles.forgotPassword}
-                        onPress={() => navigation.navigate('ForgotPassword')}
-                    >
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                    </TouchableOpacity>
 
                     <Button
-                        title="Sign In"
-                        onPress={() => navigation.navigate('CaptainDashboard')}
-                        style={styles.signInButton}
+                        title="Send Reset Link"
+                        onPress={handleResetPassword}
+                        style={styles.resetButton}
                     />
-                </View>
-
-                {/* Footer */}
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>Don't have an account? <Text style={styles.signUpLink} onPress={() => navigation.navigate('SignUp')}>Sign Up</Text></Text>
                 </View>
             </ScrollView>
         </ScreenWrapper>
@@ -115,31 +112,10 @@ const styles = StyleSheet.create({
     form: {
         flex: 1,
     },
-    forgotPassword: {
-        alignSelf: 'flex-end',
-        marginBottom: SPACING.l,
-    },
-    forgotPasswordText: {
-        color: COLORS.primary,
-        fontWeight: '600',
-        fontSize: 14,
-    },
-    signInButton: {
+    resetButton: {
         height: 56,
         borderRadius: RADIUS.m,
-    },
-    footer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: SPACING.xl,
-        paddingBottom: SPACING.xl,
-    },
-    footerText: {
-        color: COLORS.textSecondary,
-        fontSize: 16,
-    },
-    signUpLink: {
-        color: COLORS.primary,
-        fontWeight: '700',
+        marginTop: SPACING.m,
+        backgroundColor: COLORS.primary,
     },
 });

@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { WelcomeScreen } from './screens/WelcomeScreen';
 import { SignInScreen } from './screens/SignInScreen';
 import { SignUpScreen } from './screens/SignUpScreen';
+import { ForgotPasswordScreen } from './screens/ForgotPasswordScreen';
 import { PlayerDashboardScreen } from './screens/PlayerDashboardScreen';
 import { CaptainDashboardScreen } from './screens/CaptainDashboardScreen';
 import { AdminDashboardScreen } from './screens/AdminDashboardScreen';
@@ -30,6 +31,7 @@ export default function App() {
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="SignIn" component={SignInScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="PlayerDashboard" component={PlayerDashboardScreen} />
           <Stack.Screen name="CaptainDashboard" component={CaptainDashboardScreen} />
           <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />

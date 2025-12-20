@@ -43,6 +43,8 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
                     </Text>
                 </View>
 
+
+
                 {/* Actions */}
                 <View style={styles.actions}>
                     <Button
@@ -50,6 +52,8 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
                         onPress={() => navigation.navigate('SignUp')}
                         style={styles.primaryButton}
                     />
+
+
 
                     <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
                         <Text style={styles.loginLink}>I have an account</Text>
