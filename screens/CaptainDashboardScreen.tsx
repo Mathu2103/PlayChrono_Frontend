@@ -26,13 +26,11 @@ const ScheduleStackNavigator = () => {
     );
 };
 
-// Wrapper component to pass navigation correctly
-const NoticesWrapper = () => {
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'NoticesList'>>();
-    return <NoticesListScreen navigation={navigation} route={{ key: 'NoticesList', name: 'NoticesList', params: undefined }} />;
-};
+
+
 
 import { Ionicons } from '@expo/vector-icons';
+
 
 // Simple Icon component helper using Ionicons
 const TabIcon = ({ focused, label }: { focused: boolean; label: string }) => {
@@ -42,8 +40,8 @@ const TabIcon = ({ focused, label }: { focused: boolean; label: string }) => {
         iconName = focused ? 'calendar' : 'calendar-outline';
     } else if (label === 'My Bookings') {
         iconName = focused ? 'ticket' : 'ticket-outline';
-    } else if (label === 'Notices') {
-        iconName = focused ? 'notifications' : 'notifications-outline';
+
+
     } else if (label === 'Profile') {
         iconName = focused ? 'person' : 'person-outline';
     }
@@ -78,7 +76,7 @@ export const CaptainDashboardScreen: React.FC = () => {
         >
             <Tab.Screen name="Schedule" component={ScheduleStackNavigator} />
             <Tab.Screen name="My Bookings" component={CaptainBookingsScreen} />
-            <Tab.Screen name="Notices" component={NoticesWrapper} />
+
             <Tab.Screen name="Profile" component={CaptainProfileScreen} />
         </Tab.Navigator>
     );

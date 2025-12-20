@@ -12,7 +12,7 @@ const BOOKINGS = [
         sport: 'football',
         ground: 'Main Football Field',
         location: 'North Campus Ground',
-        event: 'Inter-Department League',
+        event: 'Friendly Match',
         date: 'Tomorrow, 24 Oct',
         time: '16:00 - 18:00',
         color: '#03A9F4', // Light Blue
