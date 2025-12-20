@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, Text, ViewStyle, TextInputProps, TouchableOpacity } from 'react-native';
 import { COLORS, SPACING, RADIUS, FONTS } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
 
 interface InputProps extends TextInputProps {
     label?: string;
     error?: string;
     containerStyle?: ViewStyle;
     icon?: string; // Placeholder for future icon support
+    rightIcon?: keyof typeof Ionicons.glyphMap;
+    onRightIconPress?: () => void;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -16,6 +19,8 @@ export const Input: React.FC<InputProps> = ({
     style,
     onFocus,
     onBlur,
+    rightIcon,
+    onRightIconPress,
     ...props
 }) => {
     const [isFocused, setIsFocused] = useState(false);
@@ -45,6 +50,11 @@ export const Input: React.FC<InputProps> = ({
                     onBlur={handleBlur}
                     {...props}
                 />
+                {rightIcon && (
+                    <TouchableOpacity onPress={onRightIconPress} style={styles.rightIcon}>
+                        <Ionicons name={rightIcon} size={20} color={COLORS.textSecondary} />
+                    </TouchableOpacity>
+                )}
             </View>
             {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
@@ -71,6 +81,7 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.l,
         overflow: 'hidden',
         height: 56,
+        paddingRight: SPACING.s,
     },
     input: {
         flex: 1,
@@ -78,6 +89,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.m,
         fontSize: 16,
         color: COLORS.text,
+    },
+    rightIcon: {
+        padding: SPACING.s,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     focusedInput: {
         borderColor: COLORS.primary,
