@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Button } from '../components/Button';
@@ -11,6 +11,16 @@ import { StatusBar } from 'expo-status-bar';
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 export const SignInScreen: React.FC<Props> = ({ navigation }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const handleSignIn = () => {
+        if (email === 'Admin1234@gmail.com' && password === 'Admin1234') {
+            navigation.navigate('AdminDashboard');
+        } else {
+            navigation.navigate('CaptainDashboard');
+        }
+    };
     return (
         <ScreenWrapper style={styles.container}>
             <StatusBar style="dark" />
@@ -39,11 +49,15 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
                         placeholder="john@university.edu"
                         keyboardType="email-address"
                         autoCapitalize="none"
+                        value={email}
+                        onChangeText={setEmail}
                     />
                     <Input
                         label="Password"
                         placeholder="••••••••"
                         secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
                     />
 
                     <TouchableOpacity style={styles.forgotPassword}>
@@ -52,7 +66,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 
                     <Button
                         title="Sign In"
-                        onPress={() => navigation.navigate('CaptainDashboard')}
+                        onPress={handleSignIn}
                         style={styles.signInButton}
                     />
                 </View>
