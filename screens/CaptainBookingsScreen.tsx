@@ -1,115 +1,127 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
 
-// Mock Data
-const DATES = [
-    { day: 'Mon', date: '15' },
-    { day: 'Tue', date: '16' },
-    { day: 'Wed', date: '17', active: true },
-    { day: 'Thu', date: '18' },
-    { day: 'Fri', date: '19' },
-    { day: 'Sat', date: '20' },
-    { day: 'Sun', date: '21' },
+// Mock Data matching the design
+const BOOKINGS = [
+    {
+        id: '1',
+        sport: 'football',
+        ground: 'Main Football Field',
+        location: 'North Campus Ground',
+        event: 'Inter-Department League',
+        date: 'Tomorrow, 24 Oct',
+        time: '16:00 - 18:00',
+        color: '#03A9F4', // Light Blue
+        icon: 'football',
+        status: 'CONFIRMED'
+    },
+    {
+        id: '2',
+        sport: 'basketball',
+        ground: 'Indoor Court A',
+        location: 'Sports Complex',
+        event: 'Practice Session',
+        date: 'Sat, 28 Oct',
+        time: '09:00 - 11:00',
+        color: '#FF9800', // Orange
+        icon: 'basketball',
+        status: 'CONFIRMED'
+    },
+    {
+        id: '3',
+        sport: 'tennis',
+        ground: 'Tennis Court 2',
+        location: 'Outdoor Courts',
+        event: 'Friendly Match',
+        date: 'Wed, 01 Nov',
+        time: '17:00 - 18:30',
+        color: '#9C27B0', // Purple
+        icon: 'tennisball',
+        status: 'CONFIRMED'
+    },
+    {
+        id: '4',
+        sport: 'volleyball',
+        ground: 'Volleyball Court',
+        location: 'Sand Pit Area',
+        event: 'Training',
+        date: 'Fri, 03 Nov',
+        time: '15:00 - 16:30',
+        color: '#9E9E9E', // Grey
+        icon: 'american-football',
+        status: 'COMPLETED'
+    },
 ];
-
-const GAMES = [
-    { id: '1', sport: 'Football', ground: 'Main Turf A', time: '4:00 PM', price: '$20', status: 'Available' },
-    { id: '2', sport: 'Basketball', ground: 'Indoor Court 1', time: '5:00 PM', price: '$15', status: 'Booked' },
-    { id: '3', sport: 'Tennis', ground: 'Clay Court', time: '5:30 PM', price: '$10', status: 'Available' },
-    { id: '4', sport: 'Football', ground: 'Main Turf B', time: '6:00 PM', price: '$20', status: 'Available' },
-    { id: '5', sport: 'Cricket', ground: 'Oval Ground', time: '7:00 PM', price: '$30', status: 'Fast Filling' },
-];
-
-const CATEGORIES = ['All', 'Football', 'Basketball', 'Cricket', 'Tennis'];
 
 export const CaptainBookingsScreen: React.FC = () => {
-    const [selectedCategory, setSelectedCategory] = useState('All');
+    const navigation = useNavigation<any>();
 
-    const renderDateItem = (item: any, index: number) => (
-        <TouchableOpacity
-            key={index}
-            style={[styles.dateItem, item.active && styles.activeDateItem]}
-        >
-            <Text style={[styles.dayText, item.active && styles.activeDateText]}>{item.day}</Text>
-            <Text style={[styles.dateText, item.active && styles.activeDateText]}>{item.date}</Text>
-        </TouchableOpacity>
-    );
+    const renderBookingCard = ({ item }: { item: any }) => (
+        <View style={styles.cardContainer}>
+            {/* Colored Left Border */}
+            <View style={[styles.leftBorder, { backgroundColor: item.color }]} />
 
-    const renderGameCard = ({ item }: { item: any }) => (
-        <TouchableOpacity style={styles.card}>
-            <View style={styles.cardHeader}>
-                <Text style={styles.sportTag}>{item.sport}</Text>
-                <Text style={[
-                    styles.statusText,
-                    item.status === 'Available' ? styles.statusAvailable :
-                        item.status === 'Booked' ? styles.statusBooked : styles.statusFilling
-                ]}>
-                    {item.status}
-                </Text>
-            </View>
-
-            <Text style={styles.groundName}>{item.ground}</Text>
-
-            <View style={styles.cardFooter}>
-                <View style={styles.infoRow}>
-                    <Text style={styles.icon}>🕒</Text>
-                    <Text style={styles.infoText}>{item.time}</Text>
+            <View style={styles.cardContent}>
+                {/* Top Section */}
+                <View style={styles.cardHeader}>
+                    <View style={styles.headerLeft}>
+                        <View style={[styles.iconContainer, { backgroundColor: `${item.color}15` }]}>
+                            <Ionicons name={item.icon as any} size={24} color={item.color} />
+                        </View>
+                        <View style={styles.headerTextContainer}>
+                            <Text style={styles.groundName}>{item.ground}</Text>
+                            <Text style={styles.eventText}>{item.event}</Text>
+                        </View>
+                    </View>
+                    <TouchableOpacity>
+                        <Ionicons name="ellipsis-vertical" size={20} color={COLORS.textSecondary} />
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.infoRow}>
-                    <Text style={styles.icon}>💰</Text>
-                    <Text style={styles.infoText}>{item.price}/hr</Text>
+
+                {/* Divider */}
+                <View style={styles.divider} />
+
+                {/* Bottom Section */}
+                <View style={styles.cardFooter}>
+                    <View style={styles.dateTimeContainer}>
+                        <View style={styles.infoRow}>
+                            <Ionicons name="calendar-outline" size={16} color={COLORS.textSecondary} style={styles.infoIcon} />
+                            <Text style={styles.infoText}>{item.date}</Text>
+                        </View>
+                        <View style={styles.infoRow}>
+                            <Ionicons name="time-outline" size={16} color={COLORS.textSecondary} style={styles.infoIcon} />
+                            <Text style={styles.infoText}>{item.time}</Text>
+                        </View>
+                    </View>
+
+                    <View style={[styles.statusBadge, item.status === 'COMPLETED' && styles.statusBadgeCompleted]}>
+                        <Text style={[styles.statusText, item.status === 'COMPLETED' && styles.statusTextCompleted]}>{item.status}</Text>
+                    </View>
                 </View>
             </View>
-
-            <TouchableOpacity
-                style={[
-                    styles.bookButton,
-                    item.status === 'Booked' && styles.disabledButton
-                ]}
-                disabled={item.status === 'Booked'}
-            >
-                <Text style={styles.bookButtonText}>
-                    {item.status === 'Booked' ? 'Unavailable' : 'Book Now'}
-                </Text>
-            </TouchableOpacity>
-        </TouchableOpacity>
+        </View>
     );
 
     return (
         <ScreenWrapper style={styles.screen}>
-            {/* Calendar Strip */}
-            <View style={styles.calendarContainer}>
-                <Text style={styles.sectionTitle}>December 2025</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.datesList}>
-                    {DATES.map(renderDateItem)}
-                </ScrollView>
+            {/* Header */}
+            <View style={styles.header}>
+                <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Schedule')}>
+                    <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>My Bookings</Text>
+                <View style={{ width: 40 }} />
             </View>
 
-            {/* Filter Pills */}
-            <View style={styles.filterContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList}>
-                    {CATEGORIES.map((cat, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={[styles.filterPill, selectedCategory === cat && styles.activePill]}
-                            onPress={() => setSelectedCategory(cat)}
-                        >
-                            <Text style={[styles.filterText, selectedCategory === cat && styles.activeFilterText]}>
-                                {cat}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-
-            {/* Games List */}
             <FlatList
-                data={GAMES}
-                renderItem={renderGameCard}
+                data={BOOKINGS}
+                renderItem={renderBookingCard}
                 keyExtractor={item => item.id}
-                contentContainerStyle={styles.gamesList}
+                contentContainerStyle={styles.listContainer}
                 showsVerticalScrollIndicator={false}
             />
         </ScreenWrapper>
@@ -118,155 +130,120 @@ export const CaptainBookingsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
     screen: {
-        backgroundColor: '#F8F9FE',
+        backgroundColor: '#F4F6F9',
     },
-    calendarContainer: {
-        paddingTop: SPACING.m,
-        paddingBottom: SPACING.s,
-        backgroundColor: COLORS.surface,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: COLORS.text,
-        marginLeft: SPACING.l,
-        marginBottom: SPACING.m,
-    },
-    datesList: {
-        paddingHorizontal: SPACING.l,
-        gap: SPACING.s,
-    },
-    dateItem: {
-        width: 50,
-        height: 70,
-        borderRadius: RADIUS.l,
-        borderWidth: 1,
-        borderColor: COLORS.border,
+    header: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: SPACING.m,
+        paddingVertical: SPACING.m,
         backgroundColor: COLORS.surface,
     },
-    activeDateItem: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-        shadowColor: COLORS.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
+    backButton: {
+        padding: 4,
     },
-    dayText: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        marginBottom: 4,
-    },
-    dateText: {
+    headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         color: COLORS.text,
     },
-    activeDateText: {
-        color: COLORS.surface,
-    },
-    filterContainer: {
-        paddingVertical: SPACING.m,
-    },
-    filterList: {
-        paddingHorizontal: SPACING.l,
-        gap: SPACING.s,
-    },
-    filterPill: {
-        paddingHorizontal: SPACING.m,
-        paddingVertical: 8,
-        borderRadius: RADIUS.l,
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    activePill: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    filterText: {
-        color: COLORS.textSecondary,
-        fontWeight: '600',
-    },
-    activeFilterText: {
-        color: COLORS.surface,
-    },
-    gamesList: {
-        padding: SPACING.l,
-        gap: SPACING.m,
-    },
-    card: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.l,
+    listContainer: {
         padding: SPACING.m,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
+        paddingBottom: 80,
+    },
+    cardContainer: {
+        flexDirection: 'row',
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.l,
+        marginBottom: SPACING.m,
+        overflow: 'hidden',
+        ...SHADOWS.card,
+    },
+    leftBorder: {
+        width: 6,
+    },
+    cardContent: {
+        flex: 1,
+        padding: SPACING.m,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: SPACING.s,
+        alignItems: 'flex-start',
     },
-    sportTag: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: COLORS.textSecondary,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
+    headerLeft: {
+        flexDirection: 'row',
+        flex: 1,
     },
-    statusText: {
-        fontSize: 12,
-        fontWeight: '700',
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: RADIUS.m,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: SPACING.m,
     },
-    statusAvailable: { color: COLORS.success },
-    statusBooked: { color: COLORS.textSecondary },
-    statusFilling: { color: '#FF9800' },
-
+    headerTextContainer: {
+        flex: 1,
+        justifyContent: 'center',
+    },
     groundName: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         color: COLORS.text,
-        marginBottom: SPACING.m,
+        marginBottom: 2,
+    },
+    locationText: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        marginBottom: 4,
+    },
+    eventText: {
+        fontSize: 14,
+        color: COLORS.primary, // Theme primary color
+        fontWeight: '500',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.border,
+        marginVertical: SPACING.m,
     },
     cardFooter: {
         flexDirection: 'row',
-        marginBottom: SPACING.m,
-        gap: SPACING.l,
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+    },
+    dateTimeContainer: {
+        gap: 6,
     },
     infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
-    icon: {
-        fontSize: 14,
-        marginRight: 6,
+    infoIcon: {
+        marginRight: 8,
     },
     infoText: {
-        color: COLORS.textSecondary,
         fontSize: 14,
+        color: COLORS.text,
         fontWeight: '500',
     },
-    bookButton: {
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.primary,
-        borderRadius: RADIUS.m,
-        paddingVertical: 12,
-        alignItems: 'center',
+    statusBadge: {
+        backgroundColor: '#E8F5E9',
+        paddingHorizontal: SPACING.m,
+        paddingVertical: 6,
+        borderRadius: RADIUS.s,
     },
-    disabledButton: {
-        borderColor: COLORS.border,
+    statusText: {
+        color: '#2E7D32',
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    statusBadgeCompleted: {
         backgroundColor: '#F5F5F5',
     },
-    bookButtonText: {
-        color: COLORS.primary,
-        fontWeight: '700',
-        fontSize: 14,
+    statusTextCompleted: {
+        color: '#757575',
     },
 });
