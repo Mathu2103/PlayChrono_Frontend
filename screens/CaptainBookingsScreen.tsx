@@ -1,64 +1,45 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
-
-// Mock Data matching the design
-const BOOKINGS = [
-    {
-        id: '1',
-        sport: 'football',
-        ground: 'Main Football Field',
-        location: 'North Campus Ground',
-        event: 'Friendly Match',
-        date: 'Tomorrow, 24 Oct',
-        time: '16:00 - 18:00',
-        color: '#03A9F4', // Light Blue
-        icon: 'football',
-        status: 'CONFIRMED'
-    },
-    {
-        id: '2',
-        sport: 'basketball',
-        ground: 'Indoor Court A',
-        location: 'Sports Complex',
-        event: 'Practice Session',
-        date: 'Sat, 28 Oct',
-        time: '09:00 - 11:00',
-        color: '#FF9800', // Orange
-        icon: 'basketball',
-        status: 'CONFIRMED'
-    },
-    {
-        id: '3',
-        sport: 'tennis',
-        ground: 'Tennis Court 2',
-        location: 'Outdoor Courts',
-        event: 'Friendly Match',
-        date: 'Wed, 01 Nov',
-        time: '17:00 - 18:30',
-        color: '#9C27B0', // Purple
-        icon: 'tennisball',
-        status: 'CONFIRMED'
-    },
-    {
-        id: '4',
-        sport: 'volleyball',
-        ground: 'Volleyball Court',
-        location: 'Sand Pit Area',
-        event: 'Training',
-        date: 'Fri, 03 Nov',
-        time: '15:00 - 16:30',
-        color: '#9E9E9E', // Grey
-        icon: 'american-football',
-        status: 'COMPLETED'
-    },
-];
+import { useUser } from '../context/UserContext';
 
 export const CaptainBookingsScreen: React.FC = () => {
     const navigation = useNavigation<any>();
+    const isFocused = useIsFocused();
+    const { user } = useUser();
+    const [bookings, setBookings] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    const MOCK_BOOKINGS = [
+        {
+            id: '1', sport: 'football', ground: 'Central Ground', location: 'University',
+            event: 'Practice Match', date: '2024-12-20', time: '08:00 - 10:00',
+            color: COLORS.primary, icon: 'football', status: 'CONFIRMED'
+        },
+        {
+            id: '2', sport: 'cricket', ground: 'North Arena', location: 'University',
+            event: 'Tournament', date: '2024-12-21', time: '14:00 - 18:00',
+            color: COLORS.secondary, icon: 'baseball', status: 'UPCOMING'
+        }
+    ];
+
+    const fetchMyBookings = async () => {
+        setLoading(true);
+        setTimeout(() => {
+            setBookings(MOCK_BOOKINGS);
+            setLoading(false);
+        }, 800);
+    };
+
+    useEffect(() => {
+        if (isFocused) {
+            fetchMyBookings();
+        }
+    }, [isFocused, user?.uid]);
+
 
     const renderBookingCard = ({ item }: { item: any }) => (
         <View style={styles.cardContainer}>
@@ -117,13 +98,22 @@ export const CaptainBookingsScreen: React.FC = () => {
                 <View style={{ width: 40 }} />
             </View>
 
-            <FlatList
-                data={BOOKINGS}
-                renderItem={renderBookingCard}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.listContainer}
-                showsVerticalScrollIndicator={false}
-            />
+            {loading ? (
+                <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 50 }} />
+            ) : (
+                <FlatList
+                    data={bookings}
+                    renderItem={renderBookingCard}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={{ alignItems: 'center', marginTop: 50 }}>
+                            <Text style={{ color: COLORS.textSecondary }}>No bookings found</Text>
+                        </View>
+                    }
+                />
+            )}
         </ScreenWrapper>
     );
 };

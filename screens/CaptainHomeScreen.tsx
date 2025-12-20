@@ -1,59 +1,129 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useUser } from '../context/UserContext';
 
 interface Slot {
-    id: string
+    id: string;
     time: string;
-    ground: string;
-    date: string;
     status: 'available' | 'booked';
-    purpose?: string;
 }
 
-const INITIAL_SLOTS: Slot[] = [
-    { id: '1', time: '14:00 - 15:30', ground: 'Turf Ground B', date: 'Today', status: 'available' },
-    { id: '2', time: '15:30 - 17:00', ground: 'Turf Ground A', date: 'Today', status: 'booked' },
-    { id: '3', time: '18:00 - 19:30', ground: 'Main Ground B', date: 'Today', status: 'available' },
-    { id: '4', time: '10:00 - 11:30', ground: 'Main Ground A', date: 'Tomorrow', status: 'available' },
-    { id: '5', time: '16:00 - 17:00', ground: 'Indoor Court', date: 'Wed 18 Oct', status: 'available' },
-    { id: '6', time: '09:00 - 10:00', ground: 'Turf Ground A', date: 'Thu 19 Oct', status: 'available' },
+interface Ground {
+    groundId: string;
+    groundName: string;
+    slots: Slot[];
+    availableCount: number;
+}
+
+
+
+const MOCK_GROUNDS: Ground[] = [
+    {
+        groundId: 'g1',
+        groundName: 'Central Ground',
+        availableCount: 4,
+        slots: [
+            { id: 's1', time: '08:00 - 10:00', status: 'available' },
+            { id: 's2', time: '10:00 - 12:00', status: 'booked' },
+            { id: 's3', time: '14:00 - 16:00', status: 'available' },
+            { id: 's4', time: '16:00 - 18:00', status: 'available' },
+            { id: 's5', time: '18:00 - 20:00', status: 'available' }
+        ]
+    },
+    {
+        groundId: 'g2',
+        groundName: 'North Arena',
+        availableCount: 2,
+        slots: [
+            { id: 's6', time: '08:00 - 10:00', status: 'booked' },
+            { id: 's7', time: '10:00 - 12:00', status: 'available' },
+            { id: 's8', time: '14:00 - 16:00', status: 'available' }
+        ]
+    }
 ];
 
 export const CaptainHomeScreen: React.FC = () => {
     const navigation = useNavigation<any>();
+    const { user } = useUser();
     const [showNotifications, setShowNotifications] = useState(false);
     const [selectedDate, setSelectedDate] = useState('Today');
-    const [slots, setSlots] = useState<Slot[]>(INITIAL_SLOTS);
 
-    const handleBookSlot = (id: string) => {
-        Alert.alert(
-            "Booking Purpose",
-            "Please select the purpose for this booking:",
-            [
-                {
-                    text: "Cancel",
-                    style: "cancel"
-                },
-                {
-                    text: "Practice",
-                    onPress: () => confirmBooking(id, 'Practice')
-                },
-                {
-                    text: "Friendly Match",
-                    onPress: () => confirmBooking(id, 'Friendly Match')
-                }
-            ]
-        );
+    // API Data State
+    const [grounds, setGrounds] = useState<Ground[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Modal State
+    const [modalVisible, setModalVisible] = useState(false);
+    const [bookingStep, setBookingStep] = useState(1);
+    const [selectedGroundId, setSelectedGroundId] = useState('');
+    const [selectedGroundName, setSelectedGroundName] = useState('');
+    const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
+    const [bookingPurpose, setBookingPurpose] = useState('');
+
+    const fetchAvailability = async () => {
+        setLoading(true);
+        // Simulate API delay
+        setTimeout(() => {
+            setGrounds(MOCK_GROUNDS);
+            setLoading(false);
+        }, 800);
     };
 
-    const confirmBooking = (id: string, purpose: string) => {
-        setSlots(prevSlots => prevSlots.map(slot =>
-            slot.id === id ? { ...slot, status: 'booked', purpose: purpose } : slot
-        ));
+    useEffect(() => {
+        fetchAvailability();
+    }, [selectedDate, user?.sportType]);
+
+
+    const handleBookSlot = (groundId: string, groundName: string) => {
+        setSelectedGroundId(groundId);
+        setSelectedGroundName(groundName);
+        setSelectedSlotIds([]);
+        setBookingPurpose('');
+        setBookingStep(1);
+        setModalVisible(true);
+    };
+
+    const toggleSlotSelection = (id: string) => {
+        if (selectedSlotIds.includes(id)) {
+            setSelectedSlotIds(prev => prev.filter(sid => sid !== id));
+        } else {
+            setSelectedSlotIds(prev => [...prev, id]);
+        }
+    };
+
+    const handleNextStep = () => {
+        if (!bookingPurpose) {
+            Alert.alert("Required", "Please select a purpose.");
+            return;
+        }
+        setBookingStep(2);
+    };
+
+    const confirmBooking = async () => {
+        if (selectedSlotIds.length === 0) {
+            Alert.alert("Required", "Please select at least one slot.");
+            return;
+        }
+
+        // Simulate API call
+        setTimeout(() => {
+            Alert.alert("Success", "Booking Confirmed! (Demo Mode)");
+            setModalVisible(false);
+            // In demo mode, we might want to update local state logic? 
+            // For now just refresh to reset selection
+            fetchAvailability();
+        }, 1000);
+    };
+
+
+    const cancelBooking = () => {
+        setModalVisible(false);
+        setSelectedSlotIds([]);
+        setBookingStep(1);
     };
 
     const NOTIFICATIONS = [
@@ -66,12 +136,20 @@ export const CaptainHomeScreen: React.FC = () => {
             <View style={styles.header}>
                 <View style={styles.userInfo}>
                     <View style={styles.avatarContainer}>
-                        {/* Placeholder Avatar */}
-                        <Text style={styles.avatarText}>CA</Text>
+                        {user?.profileImage ? (
+                            <Image
+                                source={{ uri: user.profileImage }}
+                                style={{ width: 48, height: 48, borderRadius: 24 }}
+                            />
+                        ) : (
+                            <Text style={styles.avatarText}>
+                                {user?.username ? user.username.charAt(0).toUpperCase() : 'C'}
+                            </Text>
+                        )}
                     </View>
                     <View>
-                        <Text style={styles.greeting}>Hi, Captain Alex</Text>
-                        <Text style={styles.teamName}>The Tigers</Text>
+                        <Text style={styles.greeting}>Hi, {user?.username || 'Captain'}</Text>
+                        <Text style={styles.teamName}>{user?.teamName || 'Team'}</Text>
                     </View>
                 </View>
                 <View style={styles.headerIcons}>
@@ -88,23 +166,25 @@ export const CaptainHomeScreen: React.FC = () => {
                         <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
                     </TouchableOpacity>
                 </View>
-            </View>
+            </View >
 
             {/* Notification Dropdown */}
-            {showNotifications && (
-                <View style={styles.notificationDropdown}>
-                    <Text style={styles.dropdownTitle}>Notifications</Text>
-                    {NOTIFICATIONS.map(note => (
-                        <TouchableOpacity key={note.id} style={[styles.notificationItem, !note.read && styles.unreadNotification]}>
-                            <View style={styles.notificationContent}>
-                                <Text style={styles.notificationMessage}>{note.message}</Text>
-                                <Text style={styles.notificationTime}>{note.time}</Text>
-                            </View>
-                            {!note.read && <View style={styles.unreadDot} />}
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
+            {
+                showNotifications && (
+                    <View style={styles.notificationDropdown}>
+                        <Text style={styles.dropdownTitle}>Notifications</Text>
+                        {NOTIFICATIONS.map(note => (
+                            <TouchableOpacity key={note.id} style={[styles.notificationItem, !note.read && styles.unreadNotification]}>
+                                <View style={styles.notificationContent}>
+                                    <Text style={styles.notificationMessage}>{note.message}</Text>
+                                    <Text style={styles.notificationTime}>{note.time}</Text>
+                                </View>
+                                {!note.read && <View style={styles.unreadDot} />}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )
+            }
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
 
@@ -130,60 +210,135 @@ export const CaptainHomeScreen: React.FC = () => {
 
                 {/* Slots List */}
                 <View style={styles.slotList}>
-                    {slots
-                        .filter(slot => slot.date === selectedDate)
-                        .map((slot) => (
-                            <View key={slot.id} style={styles.slotCard}>
-                                <View style={styles.slotContent}>
-                                    <View style={[styles.timeIconBadge, slot.status === 'booked' && styles.iconBadgeDisabled]}>
-                                        <Ionicons
-                                            name="time-outline"
-                                            size={20}
-                                            color={slot.status === 'booked' ? COLORS.textSecondary : COLORS.primary}
-                                        />
-                                    </View>
-                                    <View style={styles.slotDetails}>
-                                        <Text style={styles.slotTime}>{slot.time}</Text>
-                                        <Text style={styles.slotGround}>
-                                            {slot.ground} •{' '}
-                                            <Text style={slot.status === 'booked' ? { color: COLORS.textSecondary } : { color: COLORS.success }}>
-                                                {slot.status === 'booked' ? 'Booked' : 'Free'}
+                    {loading ? (
+                        <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
+                    ) : (
+                        grounds.map((ground) => {
+                            const isFullyBooked = ground.availableCount === 0;
+
+                            return (
+                                <View key={ground.groundId} style={styles.slotCard}>
+                                    <View style={styles.slotContent}>
+                                        <View style={[styles.timeIconBadge, isFullyBooked && styles.iconBadgeDisabled]}>
+                                            <Ionicons
+                                                name="football-outline"
+                                                size={20}
+                                                color={isFullyBooked ? COLORS.textSecondary : COLORS.primary}
+                                            />
+                                        </View>
+                                        <View style={styles.slotDetails}>
+                                            <Text style={styles.slotTime}>{ground.groundName}</Text>
+                                            <Text style={styles.slotGround}>
+                                                {isFullyBooked ? 'No slots available' : `${ground.availableCount} slots available`}
                                             </Text>
-                                        </Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.slotActions}>
+                                        <TouchableOpacity
+                                            style={[styles.bookButton, isFullyBooked && { backgroundColor: '#BDBDBD' }]}
+                                            disabled={isFullyBooked}
+                                            onPress={() => handleBookSlot(ground.groundId, ground.groundName)}
+                                        >
+                                            <Text style={styles.bookButtonText}>Check Availability</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
-
-                                <View style={styles.slotActions}>
-                                    {slot.status === 'available' ? (
-                                        <>
-                                            <View style={styles.statusBadgeAvailable}>
-                                                <Text style={styles.statusTextAvailable}>Available</Text>
-                                            </View>
-                                            <TouchableOpacity
-                                                style={styles.bookButton}
-                                                onPress={() => handleBookSlot(slot.id)}
-                                            >
-                                                <Text style={styles.bookButtonText}>Book Slot</Text>
-                                            </TouchableOpacity>
-                                        </>
-                                    ) : (
-                                        <TouchableOpacity style={styles.bookedButton} disabled>
-                                            <Text style={styles.bookedButtonText}>Booked</Text>
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            </View>
-                        ))}
-
-                    {slots.filter(slot => slot.date === selectedDate).length === 0 && (
-                        <View style={{ padding: 20, alignItems: 'center' }}>
-                            <Text style={{ color: COLORS.textSecondary }}>No slots available for this date.</Text>
-                        </View>
+                            );
+                        })
                     )}
                 </View>
 
             </ScrollView>
-        </ScreenWrapper>
+
+            {/* Custom Booking Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={cancelBooking}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>
+                                {bookingStep === 1 ? 'Select Purpose' : 'Select Time Slots'}
+                            </Text>
+                        </View>
+
+                        {bookingStep === 1 ? (
+                            <>
+                                <Text style={styles.modalLabel}>Booking Purpose:</Text>
+                                <View style={styles.purposeContainer}>
+                                    {['Practice', 'Friendly Match', 'Tournament'].map((purpose) => (
+                                        <TouchableOpacity
+                                            key={purpose}
+                                            style={[styles.purposeChip, bookingPurpose === purpose && styles.activePurposeChip]}
+                                            onPress={() => setBookingPurpose(purpose)}
+                                        >
+                                            <Text style={[styles.purposeText, bookingPurpose === purpose && styles.activePurposeText]}>
+                                                {purpose}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </>
+                        ) : (
+                            <>
+                                <Text style={styles.modalLabel}>Available Slots ({selectedGroundName})</Text>
+                                <ScrollView style={styles.slotSelectionList}>
+                                    {grounds
+                                        .find(g => g.groundId === selectedGroundId)?.slots
+                                        .map(slot => {
+                                            const isSelected = selectedSlotIds.includes(slot.id);
+                                            const isDisabled = slot.status === 'booked';
+
+                                            return (
+                                                <TouchableOpacity
+                                                    key={slot.id}
+                                                    style={[
+                                                        styles.slotSelectionChip,
+                                                        isSelected && styles.selectedSlotChip,
+                                                        isDisabled && styles.disabledSlotChip
+                                                    ]}
+                                                    disabled={isDisabled}
+                                                    onPress={() => toggleSlotSelection(slot.id)}
+                                                >
+                                                    <Text style={[
+                                                        styles.slotChipText,
+                                                        isSelected && styles.selectedSlotChipText,
+                                                        isDisabled && styles.disabledSlotChipText
+                                                    ]}>
+                                                        {slot.time}
+                                                    </Text>
+
+                                                    {isSelected && <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />}
+                                                </TouchableOpacity>
+                                            )
+                                        })}
+                                </ScrollView>
+                            </>
+                        )}
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity style={styles.cancelBtn} onPress={cancelBooking}>
+                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            {bookingStep === 1 ? (
+                                <TouchableOpacity style={styles.confirmBtn} onPress={handleNextStep}>
+                                    <Text style={styles.confirmBtnText}>Next</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity style={styles.confirmBtn} onPress={confirmBooking}>
+                                    <Text style={styles.confirmBtnText}>Confirm Booking</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </ScreenWrapper >
     );
 };
 
@@ -501,5 +656,120 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: COLORS.primary,
         marginLeft: SPACING.s,
+    },
+
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        padding: SPACING.l,
+    },
+    modalContent: {
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.l,
+        padding: SPACING.l,
+        ...SHADOWS.card,
+    },
+    modalHeader: {
+        marginBottom: SPACING.m,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+    },
+    modalLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.text,
+        marginBottom: SPACING.m,
+    },
+    purposeContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: SPACING.s,
+        marginBottom: SPACING.l,
+    },
+    purposeChip: {
+        paddingHorizontal: SPACING.m,
+        paddingVertical: 8,
+        borderRadius: RADIUS.m,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        backgroundColor: '#F5F5F5',
+    },
+    activePurposeChip: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    purposeText: {
+        color: COLORS.text,
+        fontWeight: '500',
+    },
+    activePurposeText: {
+        color: COLORS.surface,
+        fontWeight: 'bold',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: SPACING.m,
+    },
+    cancelBtn: {
+        paddingVertical: 10,
+        paddingHorizontal: SPACING.m,
+    },
+    cancelBtnText: {
+        color: COLORS.textSecondary,
+        fontWeight: '600',
+    },
+    confirmBtn: {
+        backgroundColor: COLORS.primary,
+        paddingVertical: 10,
+        paddingHorizontal: SPACING.l,
+        borderRadius: RADIUS.m,
+    },
+    confirmBtnText: {
+        color: COLORS.surface,
+        fontWeight: '600',
+    },
+    // Slot Selection Styles
+    slotSelectionList: {
+        maxHeight: 250,
+        marginVertical: SPACING.m,
+    },
+    slotSelectionChip: {
+        padding: SPACING.m,
+        borderRadius: RADIUS.m,
+        marginBottom: SPACING.s,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        backgroundColor: COLORS.surface,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    selectedSlotChip: {
+        borderColor: COLORS.primary,
+        backgroundColor: '#E3F2FD',
+    },
+    disabledSlotChip: {
+        backgroundColor: '#F5F5F5',
+        borderColor: 'transparent',
+        opacity: 0.6,
+    },
+    slotChipText: {
+        fontSize: 14,
+        color: COLORS.text,
+        fontWeight: '500',
+    },
+    selectedSlotChipText: {
+        color: COLORS.primary,
+        fontWeight: 'bold',
+    },
+    disabledSlotChipText: {
+        color: COLORS.textSecondary,
     },
 });

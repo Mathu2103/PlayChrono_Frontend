@@ -24,14 +24,16 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const handleSignUp = () => {
+    const handleSignUp = async () => {
         if (password !== confirmPassword) {
             Alert.alert("Error", "Passwords do not match");
             return;
         }
 
-        // Proceed with sign up
-        navigation.navigate('SignIn');
+        // Mock Register
+        Alert.alert("Demo Mode", "Account created successfully! (Backend Bypass)", [
+            { text: "OK", onPress: () => navigation.navigate('SignIn') }
+        ]);
     };
 
     const isPasswordStrong = password.length >= 8 && confirmPassword === password && password !== '';

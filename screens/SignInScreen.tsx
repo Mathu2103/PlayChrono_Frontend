@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -9,11 +9,34 @@ import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useUser } from '../context/UserContext';
+
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 export const SignInScreen: React.FC<Props> = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const { setUser } = useUser();
+
+    const handleSignIn = async () => {
+        // Mock Login for Demo
+        Alert.alert("Demo Mode", "Logging in as Demo Captain (Backend Bypass)");
+
+        setUser({
+            uid: 'mock_captain_uid',
+            email: email || 'captain@demo.com',
+            username: 'Demo Captain',
+            role: 'captain',
+            sportType: 'Football',
+            teamName: 'Dream Team',
+            profileImage: undefined
+        });
+
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'CaptainDashboard' }],
+        });
+    };
 
     return (
         <ScreenWrapper style={styles.container}>
@@ -25,7 +48,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity
-                        onPress={() => navigation.goBack()}
+                        onPress={() => navigation.navigate('Welcome')}
                         style={styles.backButton}
                     >
                         <Ionicons name="arrow-back" size={24} color={COLORS.text} />
@@ -63,7 +86,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 
                     <Button
                         title="Sign In"
-                        onPress={() => navigation.navigate('CaptainDashboard')}
+                        onPress={handleSignIn}
                         style={styles.signInButton}
                     />
                 </View>
