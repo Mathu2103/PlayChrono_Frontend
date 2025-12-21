@@ -6,6 +6,7 @@ import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../context/UserContext';
 import * as ImagePicker from 'expo-image-picker';
+import { API_BASE_URL } from '../config';
 
 export const CaptainProfileScreen: React.FC = () => {
     const navigation = useNavigation<any>();
@@ -63,26 +64,29 @@ export const CaptainProfileScreen: React.FC = () => {
 
         setIsLoading(true);
 
-        setTimeout(() => {
-            // Mock Update
-            const updatedUser = {
-                ...user,
-                username: name,
-                sportType: sport,
-                teamName: team,
-                profileImage: profileImage || undefined
-            };
-
-            setUser(updatedUser);
-
-            Alert.alert('Success', 'Profile updated successfully! (Demo Mode)', [
-                {
-                    text: 'OK',
-                    onPress: () => navigation.goBack()
-                }
-            ]);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/update-profile/${user?.uid}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: name,
+                    sportType: sport,
+                    teamName: team,
+                    profileImage: profileImage
+                }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setUser(data.user);
+                Alert.alert('Success', 'Profile updated successfully!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            } else {
+                Alert.alert("Error", data.error || "Failed to update profile");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Something went wrong.");
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     return (

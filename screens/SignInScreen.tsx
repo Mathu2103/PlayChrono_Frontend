@@ -8,8 +8,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-
 import { useUser } from '../context/UserContext';
+import { API_BASE_URL } from '../config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
@@ -19,23 +19,36 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
     const { setUser } = useUser();
 
     const handleSignIn = async () => {
-        // Mock Login for Demo
-        Alert.alert("Demo Mode", "Logging in as Demo Captain (Backend Bypass)");
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
 
-        setUser({
-            uid: 'mock_captain_uid',
-            email: email || 'captain@demo.com',
-            username: 'Demo Captain',
-            role: 'captain',
-            sportType: 'Football',
-            teamName: 'Dream Team',
-            profileImage: undefined
-        });
+            const data = await response.json();
 
-        navigation.reset({
-            index: 0,
-            routes: [{ name: 'CaptainDashboard' }],
-        });
+            if (response.ok) {
+                setUser(data.user);
+                const role = data.user.role;
+                if (role === 'captain') {
+                    navigation.reset({ index: 0, routes: [{ name: 'CaptainDashboard' }] });
+                } else if (role === 'student' || role === 'player') {
+                    navigation.reset({ index: 0, routes: [{ name: 'NoticesList' }] });
+                } else if (role === 'admin') {
+                    navigation.reset({ index: 0, routes: [{ name: 'AdminDashboard' }] });
+                } else {
+                    navigation.reset({ index: 0, routes: [{ name: 'NoticesList' }] });
+                }
+            } else {
+                Alert.alert("Login Failed", data.error || "Invalid credentials");
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "Check your internet connection or Backend status.");
+        }
     };
 
     return (

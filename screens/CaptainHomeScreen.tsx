@@ -5,6 +5,7 @@ import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '../context/UserContext';
+import { API_BASE_URL } from '../config';
 
 interface Slot {
     id: string;
@@ -21,30 +22,7 @@ interface Ground {
 
 
 
-const MOCK_GROUNDS: Ground[] = [
-    {
-        groundId: 'g1',
-        groundName: 'Central Ground',
-        availableCount: 4,
-        slots: [
-            { id: 's1', time: '08:00 - 10:00', status: 'available' },
-            { id: 's2', time: '10:00 - 12:00', status: 'booked' },
-            { id: 's3', time: '14:00 - 16:00', status: 'available' },
-            { id: 's4', time: '16:00 - 18:00', status: 'available' },
-            { id: 's5', time: '18:00 - 20:00', status: 'available' }
-        ]
-    },
-    {
-        groundId: 'g2',
-        groundName: 'North Arena',
-        availableCount: 2,
-        slots: [
-            { id: 's6', time: '08:00 - 10:00', status: 'booked' },
-            { id: 's7', time: '10:00 - 12:00', status: 'available' },
-            { id: 's8', time: '14:00 - 16:00', status: 'available' }
-        ]
-    }
-];
+
 
 export const CaptainHomeScreen: React.FC = () => {
     const navigation = useNavigation<any>();
@@ -65,12 +43,25 @@ export const CaptainHomeScreen: React.FC = () => {
     const [bookingPurpose, setBookingPurpose] = useState('');
 
     const fetchAvailability = async () => {
-        setLoading(true);
-        // Simulate API delay
-        setTimeout(() => {
-            setGrounds(MOCK_GROUNDS);
+        try {
+            setLoading(true);
+            const sport = user?.sportType || 'Football';
+            const encSport = encodeURIComponent(sport);
+            const encDate = encodeURIComponent(selectedDate);
+            const url = `${API_BASE_URL}/api/bookings/available?sport=${encSport}&date=${encDate}`;
+            const response = await fetch(url);
+
+            if (response.ok) {
+                const data = await response.json();
+                setGrounds(data.grounds);
+            } else {
+                Alert.alert("Error", `Fetch failed: ${response.status}`);
+            }
+        } catch (error) {
+            Alert.alert("Network Error", "Is the backend running?");
+        } finally {
             setLoading(false);
-        }, 800);
+        }
     };
 
     useEffect(() => {
@@ -108,15 +99,38 @@ export const CaptainHomeScreen: React.FC = () => {
             Alert.alert("Required", "Please select at least one slot.");
             return;
         }
+        try {
+            const currentGround = grounds.find(g => g.groundId === selectedGroundId);
+            if (!currentGround) return;
+            const selectedTimeSlots = currentGround.slots
+                .filter(s => selectedSlotIds.includes(s.id)).map(s => s.time);
 
-        // Simulate API call
-        setTimeout(() => {
-            Alert.alert("Success", "Booking Confirmed! (Demo Mode)");
-            setModalVisible(false);
-            // In demo mode, we might want to update local state logic? 
-            // For now just refresh to reset selection
-            fetchAvailability();
-        }, 1000);
+            const bookingData = {
+                captainId: user?.uid,
+                captainName: user?.username || 'Captain',
+                sportType: user?.sportType || 'Football',
+                groundId: selectedGroundId,
+                groundName: selectedGroundName,
+                date: selectedDate,
+                selectedSlots: selectedTimeSlots,
+                purpose: bookingPurpose
+            };
+            const response = await fetch(`${API_BASE_URL}/api/bookings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingData)
+            });
+            const resData = await response.json();
+            if (response.ok) {
+                Alert.alert("Success", "Booking Confirmed!");
+                setModalVisible(false);
+                fetchAvailability();
+            } else {
+                Alert.alert("Booking Failed", resData.error || "Please try again.");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Could not connect to server.");
+        }
     };
 
 

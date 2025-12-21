@@ -8,6 +8,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 
@@ -30,10 +31,33 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             return;
         }
 
-        // Mock Register
-        Alert.alert("Demo Mode", "Account created successfully! (Backend Bypass)", [
-            { text: "OK", onPress: () => navigation.navigate('SignIn') }
-        ]);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    username: fullName,
+                    role: role.toLowerCase(),
+                    sportType: role === 'Captain' ? sportName : undefined,
+                    teamName: role === 'Captain' ? teamName : undefined
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                Alert.alert("Success", "Account created successfully", [
+                    { text: "OK", onPress: () => navigation.navigate('SignIn') }
+                ]);
+            } else {
+                Alert.alert("Error", data.error || "Registration failed");
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "Network request failed. Check Backend.");
+        }
     };
 
     const isPasswordStrong = password.length >= 8 && confirmPassword === password && password !== '';

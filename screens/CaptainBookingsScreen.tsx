@@ -5,6 +5,7 @@ import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser } from '../context/UserContext';
+import { API_BASE_URL } from '../config';
 
 export const CaptainBookingsScreen: React.FC = () => {
     const navigation = useNavigation<any>();
@@ -27,11 +28,34 @@ export const CaptainBookingsScreen: React.FC = () => {
     ];
 
     const fetchMyBookings = async () => {
+        if (!user) return;
         setLoading(true);
-        setTimeout(() => {
-            setBookings(MOCK_BOOKINGS);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/bookings/my-bookings/${user.uid}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                const mappedBookings = data.bookings.map((b: any) => ({
+                    id: b.bookingId || Math.random().toString(),
+                    sport: b.sportType?.toLowerCase() || 'sports',
+                    ground: b.groundName,
+                    location: 'PlayChrono Ground',
+                    event: b.purpose || 'Booking',
+                    date: b.date,
+                    time: b.selectedSlots?.join(', ') || 'Time N/A',
+                    color: COLORS.primary,
+                    icon: 'football',
+                    status: (b.status || 'CONFIRMED').toUpperCase()
+                }));
+                setBookings(mappedBookings);
+            } else {
+                Alert.alert("Error", `Server check failed: ${response.status}`);
+            }
+        } catch (error) {
+            Alert.alert("Network Error", "Could not connect to server.");
+        } finally {
             setLoading(false);
-        }, 800);
+        }
     };
 
     useEffect(() => {
