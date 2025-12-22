@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -8,12 +8,48 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../context/UserContext';
+import { API_BASE_URL } from '../config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 export const SignInScreen: React.FC<Props> = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const { setUser } = useUser();
+
+    const handleSignIn = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setUser(data.user);
+                const role = data.user.role;
+                if (role === 'captain') {
+                    navigation.reset({ index: 0, routes: [{ name: 'CaptainDashboard' }] });
+                } else if (role === 'student' || role === 'player') {
+                    navigation.reset({ index: 0, routes: [{ name: 'NoticesList' }] });
+                } else if (role === 'admin') {
+                    navigation.reset({ index: 0, routes: [{ name: 'AdminDashboard' }] });
+                } else {
+                    navigation.reset({ index: 0, routes: [{ name: 'NoticesList' }] });
+                }
+            } else {
+                Alert.alert("Login Failed", data.error || "Invalid credentials");
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "Check your internet connection or Backend status.");
+        }
+    };
 
     return (
         <ScreenWrapper style={styles.container}>
@@ -25,7 +61,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity
-                        onPress={() => navigation.goBack()}
+                        onPress={() => navigation.navigate('Welcome')}
                         style={styles.backButton}
                     >
                         <Ionicons name="arrow-back" size={24} color={COLORS.text} />
@@ -63,7 +99,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 
                     <Button
                         title="Sign In"
-                        onPress={() => navigation.navigate('CaptainDashboard')}
+                        onPress={handleSignIn}
                         style={styles.signInButton}
                     />
                 </View>
