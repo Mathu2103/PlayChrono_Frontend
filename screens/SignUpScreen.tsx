@@ -117,12 +117,21 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
                     />
                     {role === 'Captain' && (
                         <>
-                            <Input
-                                label="Sport Name"
-                                placeholder="e.g. Football"
-                                value={sportName}
-                                onChangeText={setSportName}
-                            />
+                            <Text style={styles.inputLabel}>Select Sport</Text>
+                            <View style={styles.sportsContainer}>
+                                {['Football', 'Cricket', 'Elle', 'Track Meets', 'Volleyball', 'Badminton', 'Table Tennis'].map((sport) => (
+                                    <TouchableOpacity
+                                        key={sport}
+                                        style={[styles.sportChip, sportName === sport && styles.activeSportChip]}
+                                        onPress={() => setSportName(sport)}
+                                    >
+                                        <Text style={[styles.sportChipText, sportName === sport && styles.activeSportChipText]}>
+                                            {sport}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
                             <Input
                                 label="Team Name"
                                 placeholder="e.g. The Tigers"
@@ -176,7 +185,7 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             </ScrollView>
 
 
-        </ScreenWrapper>
+        </ScreenWrapper >
     );
 };
 
@@ -276,5 +285,38 @@ const styles = StyleSheet.create({
     signInLink: {
         color: COLORS.primary,
         fontWeight: '700',
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.text,
+        marginBottom: 8,
+    },
+    sportsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: SPACING.m,
+    },
+    sportChip: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        backgroundColor: '#F5F5F5',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    activeSportChip: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    sportChipText: {
+        fontSize: 14,
+        color: COLORS.text,
+        fontWeight: '500',
+    },
+    activeSportChipText: {
+        color: COLORS.surface,
+        fontWeight: 'bold',
     },
 });

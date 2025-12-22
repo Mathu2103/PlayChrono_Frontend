@@ -26,9 +26,16 @@ interface Ground {
 
 export const CaptainHomeScreen: React.FC = () => {
     const navigation = useNavigation<any>();
-    const { user } = useUser();
+    const { user, setUser } = useUser();
     const [showNotifications, setShowNotifications] = useState(false);
-    const [selectedDate, setSelectedDate] = useState('Today');
+    const [profileModalVisible, setProfileModalVisible] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(() => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    });
 
     // API Data State
     const [grounds, setGrounds] = useState<Ground[]>([]);
@@ -108,6 +115,7 @@ export const CaptainHomeScreen: React.FC = () => {
             const bookingData = {
                 captainId: user?.uid,
                 captainName: user?.username || 'Captain',
+                teamName: user?.teamName || 'Team',
                 sportType: user?.sportType || 'Football',
                 groundId: selectedGroundId,
                 groundName: selectedGroundName,
@@ -140,6 +148,15 @@ export const CaptainHomeScreen: React.FC = () => {
         setBookingStep(1);
     };
 
+    const handleLogout = () => {
+        setProfileModalVisible(false);
+        setUser(null);
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'Welcome' }],
+        });
+    };
+
     const NOTIFICATIONS = [
         { id: '1', message: 'Main Ground A is available tomorrow at 4 PM.', time: '10m ago', read: false },
         { id: '2', message: 'New slot opened at Indoor Court.', time: '1h ago', read: true },
@@ -149,18 +166,20 @@ export const CaptainHomeScreen: React.FC = () => {
         <ScreenWrapper style={styles.screen}>
             <View style={styles.header}>
                 <View style={styles.userInfo}>
-                    <View style={styles.avatarContainer}>
-                        {user?.profileImage ? (
-                            <Image
-                                source={{ uri: user.profileImage }}
-                                style={{ width: 48, height: 48, borderRadius: 24 }}
-                            />
-                        ) : (
-                            <Text style={styles.avatarText}>
-                                {user?.username ? user.username.charAt(0).toUpperCase() : 'C'}
-                            </Text>
-                        )}
-                    </View>
+                    <TouchableOpacity onPress={() => setProfileModalVisible(true)}>
+                        <View style={styles.avatarContainer}>
+                            {user?.profileImage ? (
+                                <Image
+                                    source={{ uri: user.profileImage }}
+                                    style={{ width: 48, height: 48, borderRadius: 24 }}
+                                />
+                            ) : (
+                                <Text style={styles.avatarText}>
+                                    {user?.username ? user.username.charAt(0).toUpperCase() : 'C'}
+                                </Text>
+                            )}
+                        </View>
+                    </TouchableOpacity>
                     <View>
                         <Text style={styles.greeting}>Hi, {user?.username || 'Captain'}</Text>
                         <Text style={styles.teamName}>{user?.teamName || 'Team'}</Text>
@@ -206,20 +225,43 @@ export const CaptainHomeScreen: React.FC = () => {
 
                 {/* Date Tabs */}
                 {/* Find a Slot Section */}
+                {/* Date Tabs - Dynamic Generation */}
                 <Text style={styles.sectionTitle}>Find a Slot</Text>
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer}>
-                    {['Today', 'Tomorrow', 'Wed 18 Oct', 'Thu 19 Oct'].map((item) => (
-                        <TouchableOpacity
-                            key={item}
-                            style={[styles.tab, selectedDate === item && styles.activeTab]}
-                            onPress={() => setSelectedDate(item)}
-                        >
-                            <Text style={[styles.tabText, selectedDate === item && styles.activeTabText]}>
-                                {item}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    {(() => {
+                        const dates = [];
+                        const today = new Date();
+                        for (let i = 0; i < 7; i++) {
+                            const d = new Date(today);
+                            d.setDate(today.getDate() + i);
+
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            const dateValue = `${year}-${month}-${day}`;
+
+                            let label = '';
+                            if (i === 0) label = 'Today';
+                            else if (i === 1) label = 'Tomorrow';
+                            else {
+                                label = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+                            }
+                            dates.push({ label, value: dateValue });
+                        }
+
+                        return dates.map((item) => (
+                            <TouchableOpacity
+                                key={item.value}
+                                style={[styles.tab, selectedDate === item.value && styles.activeTab]}
+                                onPress={() => setSelectedDate(item.value)}
+                            >
+                                <Text style={[styles.tabText, selectedDate === item.value && styles.activeTabText]}>
+                                    {item.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ));
+                    })()}
                 </ScrollView>
 
                 {/* Slots List */}
@@ -351,6 +393,43 @@ export const CaptainHomeScreen: React.FC = () => {
                         </View>
                     </View>
                 </View>
+            </Modal>
+            {/* Profile Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={profileModalVisible}
+                onRequestClose={() => setProfileModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setProfileModalVisible(false)}
+                >
+                    <View style={styles.profileModalContent}>
+                        <View style={styles.profileHeader}>
+                            <View style={styles.largeAvatarContainer}>
+                                {user?.profileImage ? (
+                                    <Image
+                                        source={{ uri: user.profileImage }}
+                                        style={styles.largeAvatar}
+                                    />
+                                ) : (
+                                    <Text style={styles.largeAvatarText}>
+                                        {user?.username ? user.username.charAt(0).toUpperCase() : 'C'}
+                                    </Text>
+                                )}
+                            </View>
+                            <Text style={styles.profileName}>Hi, {user?.username}</Text>
+                            <Text style={styles.profileTeam}>{user?.teamName}</Text>
+                        </View>
+
+                        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                            <Text style={styles.logoutButtonText}>Logout</Text>
+                            <Ionicons name="log-out-outline" size={20} color={COLORS.surface} style={{ marginLeft: 8 }} />
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
             </Modal>
         </ScreenWrapper >
     );
@@ -677,12 +756,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
+        alignItems: 'center',
         padding: SPACING.l,
     },
     modalContent: {
         backgroundColor: COLORS.surface,
         borderRadius: RADIUS.l,
         padding: SPACING.l,
+        width: '100%',
         ...SHADOWS.card,
     },
     modalHeader: {
@@ -785,5 +866,93 @@ const styles = StyleSheet.create({
     },
     disabledSlotChipText: {
         color: COLORS.textSecondary,
+    },
+
+    // Profile Modal Styles
+    profileModalContent: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 24,
+        padding: 32,
+        width: '85%',
+        maxWidth: 340,
+        alignItems: 'center',
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4.84,
+        elevation: 10,
+    },
+    profileHeader: {
+        alignItems: 'center',
+        marginBottom: SPACING.xl,
+    },
+    largeAvatarContainer: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: SPACING.m,
+        borderWidth: 4,
+        borderColor: COLORS.surface,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    largeAvatar: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+    },
+    largeAvatarText: {
+        color: COLORS.surface,
+        fontSize: 40,
+        fontWeight: 'bold',
+    },
+    profileName: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginBottom: 4,
+        textAlign: 'center',
+    },
+    profileTeam: {
+        fontSize: 16,
+        color: COLORS.primary,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    logoutButton: {
+        backgroundColor: COLORS.primary,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: SPACING.xl,
+        borderRadius: RADIUS.m,
+        width: '100%',
+        justifyContent: 'center',
+        shadowColor: COLORS.primary,
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    logoutButtonText: {
+        color: COLORS.surface,
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: -4, // Optical adjustment for icon
     },
 });

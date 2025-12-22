@@ -155,16 +155,18 @@ export const CaptainProfileScreen: React.FC = () => {
                     {/* Sport */}
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Sport</Text>
-                        <View style={styles.inputContainer}>
+                        <View style={[styles.inputContainer, styles.disabledInput]}>
                             <Ionicons name="trophy-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 value={sport}
-                                onChangeText={setSport}
-                                placeholder="Sport (e.g. Football)"
+                                editable={false}
+                                placeholder="Sport"
                                 placeholderTextColor={COLORS.textSecondary}
                             />
+                            <Ionicons name="lock-closed" size={16} color={COLORS.textSecondary} />
                         </View>
+                        <Text style={styles.helperText}>Sport cannot be changed.</Text>
                     </View>
 
                     {/* Team Name */}
