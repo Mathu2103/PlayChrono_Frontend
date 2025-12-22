@@ -1,58 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
-import { COLORS, SPACING, RADIUS, SHADOWS, FONTS } from '../theme';
+import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../context/UserContext';
+import * as ImagePicker from 'expo-image-picker';
+import { API_BASE_URL } from '../config';
 
 export const CaptainProfileScreen: React.FC = () => {
     const navigation = useNavigation<any>();
+    const { user, setUser } = useUser();
 
-    // Initial data - normally fetched from backend
-    const initialData = {
-        name: 'Captain Alex',
-        sport: 'Badminton',
-        email: 'alex@playchrono.com'
-    };
-
-    const [name, setName] = useState(initialData.name);
-    const [sport, setSport] = useState(initialData.sport);
-    const [email] = useState(initialData.email);
+    // Local state for form fields
+    const [name, setName] = useState(user?.username || '');
+    const [sport, setSport] = useState(user?.sportType || '');
+    const [team, setTeam] = useState(user?.teamName || '');
+    const [profileImage, setProfileImage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Check for changes
-    const hasChanges = name !== initialData.name || sport !== initialData.sport;
+    // Sync state if user context updates
+    useEffect(() => {
+        if (user) {
+            setName(user.username);
+            setSport(user.sportType || '');
+            setTeam(user.teamName || '');
+            if (user.profileImage) setProfileImage(user.profileImage);
+        }
+    }, [user]);
 
-    const handleSave = () => {
+    const hasChanges =
+        name !== user?.username ||
+        sport !== user?.sportType ||
+        team !== user?.teamName ||
+        profileImage !== null;
+
+    const pickImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.2, // Low quality to fit in Firestore
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets[0].base64) {
+            // Create a data URI for display and upload
+            const uri = `data:image/jpeg;base64,${result.assets[0].base64}`;
+            setProfileImage(uri);
+        }
+    };
+
+    const handleSave = async () => {
         // Validation
-        if (!name.trim() || !sport.trim()) {
-            Alert.alert('Invalid Input', 'Name and Sport cannot be empty.');
+        if (!user) {
+            Alert.alert("Session Expired", "Please log out and log in again.");
+            return;
+        }
+        if (!name.trim()) {
+            Alert.alert('Invalid Input', 'Name cannot be empty.');
             return;
         }
 
         setIsLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/update-profile/${user?.uid}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: name,
+                    sportType: sport,
+                    teamName: team,
+                    profileImage: profileImage
+                }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setUser(data.user);
+                Alert.alert('Success', 'Profile updated successfully!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+            } else {
+                Alert.alert("Error", data.error || "Failed to update profile");
+            }
+        } catch (error) {
+            Alert.alert("Error", "Something went wrong.");
+        } finally {
             setIsLoading(false);
-            Alert.alert('Success', 'Profile updated successfully!', [
-                {
-                    text: 'OK',
-                    onPress: () => {
-                        // Navigate back or refresh state
-                        // Since we are on the profile tab, staying here is appropriate.
-                        // Ideally we would update the "initialData" to the new values here.
-                    }
-                }
-            ]);
-        }, 1500);
+        }
     };
 
     return (
         <ScreenWrapper style={styles.screen}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Schedule')}>
+                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Edit Profile</Text>
@@ -63,15 +104,18 @@ export const CaptainProfileScreen: React.FC = () => {
 
                 {/* Profile Picture Section */}
                 <View style={styles.avatarSection}>
-                    <View style={styles.avatarContainer}>
-                        {/* Placeholder for Image - In real app, use Image component */}
-                        <Text style={styles.avatarText}>{name.substring(0, 2).toUpperCase()}</Text>
-                        <TouchableOpacity style={styles.cameraButton}>
+                    <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
+                        {profileImage ? (
+                            <Image source={{ uri: profileImage }} style={styles.avatarImage} />
+                        ) : (
+                            <Text style={styles.avatarText}>{name ? name.substring(0, 2).toUpperCase() : 'U'}</Text>
+                        )}
+                        <View style={styles.cameraButton}>
                             <Ionicons name="camera" size={16} color={COLORS.surface} />
-                        </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity>
-                        <Text style={styles.changePhotoText}>Edit Photo</Text>
+                        </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={pickImage}>
+                        <Text style={styles.changePhotoText}>Change Photo</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -99,24 +143,42 @@ export const CaptainProfileScreen: React.FC = () => {
                             <Ionicons name="mail" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
-                                value={email}
+                                value={user?.email || ''}
                                 editable={false}
                                 placeholder="Email Address"
                             />
                             <Ionicons name="lock-closed" size={16} color={COLORS.textSecondary} />
                         </View>
+                        <Text style={styles.helperText}>Email cannot be changed.</Text>
                     </View>
 
                     {/* Sport */}
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Sport</Text>
-                        <View style={styles.inputContainer}>
+                        <View style={[styles.inputContainer, styles.disabledInput]}>
                             <Ionicons name="trophy-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
                             <TextInput
                                 style={styles.input}
                                 value={sport}
-                                onChangeText={setSport}
+                                editable={false}
                                 placeholder="Sport"
+                                placeholderTextColor={COLORS.textSecondary}
+                            />
+                            <Ionicons name="lock-closed" size={16} color={COLORS.textSecondary} />
+                        </View>
+                        <Text style={styles.helperText}>Sport cannot be changed.</Text>
+                    </View>
+
+                    {/* Team Name */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Team Name</Text>
+                        <View style={styles.inputContainer}>
+                            <Ionicons name="people-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+                            <TextInput
+                                style={styles.input}
+                                value={team}
+                                onChangeText={setTeam}
+                                placeholder="Team Name"
                                 placeholderTextColor={COLORS.textSecondary}
                             />
                         </View>
@@ -175,11 +237,16 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: COLORS.primary, // Using theme primary color
+        backgroundColor: COLORS.primary,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: SPACING.s,
         position: 'relative',
+    },
+    avatarImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
     },
     avatarText: {
         fontSize: 32,
@@ -190,7 +257,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         right: 0,
-        backgroundColor: COLORS.primary, // Using theme primary color
+        backgroundColor: COLORS.primary,
         width: 32,
         height: 32,
         borderRadius: 16,
@@ -248,7 +315,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     saveButton: {
-        backgroundColor: COLORS.primary, // Using theme primary color
+        backgroundColor: COLORS.primary,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',

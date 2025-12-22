@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -7,20 +7,50 @@ import { COLORS, SPACING, RADIUS } from '../theme';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../context/UserContext';
+import { API_BASE_URL } from '../config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 export const SignInScreen: React.FC<Props> = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const { setUser } = useUser();
 
-    const handleSignIn = () => {
-        if (email === 'Admin1234@gmail.com' && password === 'Admin1234') {
-            navigation.navigate('AdminDashboard');
-        } else {
-            navigation.navigate('CaptainDashboard');
+    const handleSignIn = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setUser(data.user);
+                const role = data.user.role;
+                if (role === 'captain') {
+                    navigation.reset({ index: 0, routes: [{ name: 'CaptainDashboard' }] });
+                } else if (role === 'student' || role === 'player') {
+                    navigation.reset({ index: 0, routes: [{ name: 'NoticesList' }] });
+                } else if (role === 'admin') {
+                    navigation.reset({ index: 0, routes: [{ name: 'AdminDashboard' }] });
+                } else {
+                    navigation.reset({ index: 0, routes: [{ name: 'NoticesList' }] });
+                }
+            } else {
+                Alert.alert("Login Failed", data.error || "Invalid credentials");
+            }
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Error", "Check your internet connection or Backend status.");
         }
     };
+
     return (
         <ScreenWrapper style={styles.container}>
             <StatusBar style="dark" />
@@ -31,10 +61,10 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <TouchableOpacity
-                        onPress={() => navigation.goBack()}
+                        onPress={() => navigation.navigate('Welcome')}
                         style={styles.backButton}
                     >
-                        <Text style={styles.backButtonText}>←</Text>
+                        <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                     </TouchableOpacity>
                     <View style={styles.headerTitles}>
                         <Text style={styles.title}>Welcome Back</Text>
@@ -60,7 +90,10 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
                         onChangeText={setPassword}
                     />
 
-                    <TouchableOpacity style={styles.forgotPassword}>
+                    <TouchableOpacity
+                        style={styles.forgotPassword}
+                        onPress={() => navigation.navigate('ForgotPassword')}
+                    >
                         <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                     </TouchableOpacity>
 
@@ -73,10 +106,7 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>Don't have an account?</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                        <Text style={styles.signUpLink}>Sign Up</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.footerText}>Don't have an account? <Text style={styles.signUpLink} onPress={() => navigation.navigate('SignUp')}>Sign Up</Text></Text>
                 </View>
             </ScrollView>
         </ScreenWrapper>
@@ -103,10 +133,8 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.s,
         backgroundColor: COLORS.surface,
         marginBottom: SPACING.m,
-    },
-    backButtonText: {
-        fontSize: 24,
-        color: COLORS.text,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
     headerTitles: {
         gap: SPACING.xs,
@@ -134,14 +162,13 @@ const styles = StyleSheet.create({
     },
     signInButton: {
         height: 56,
-        borderRadius: RADIUS.l,
+        borderRadius: RADIUS.m,
     },
     footer: {
-        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: SPACING.xl,
-        gap: SPACING.xs,
+        paddingBottom: SPACING.xl,
     },
     footerText: {
         color: COLORS.textSecondary,
@@ -150,6 +177,5 @@ const styles = StyleSheet.create({
     signUpLink: {
         color: COLORS.primary,
         fontWeight: '700',
-        fontSize: 16,
     },
 });

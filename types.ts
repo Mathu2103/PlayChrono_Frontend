@@ -1,16 +1,15 @@
-export type UserRole = 'guest' | 'student' | 'captain' | 'admin';
+export type UserRole = 'student' | 'captain' | 'admin';
 
 export type RootStackParamList = {
     Welcome: undefined;
     SignIn: undefined;
     SignUp: undefined;
+    ForgotPassword: undefined;
     PlayerDashboard: undefined;
     CaptainDashboard: undefined;
     CaptainCalendar: undefined;
     AdminDashboard: undefined;
     NoticesList: undefined;
-    NoticeDetail: { noticeId: string };
-    CreateNotice: undefined;
 };
 
 export type NoticePriority = 'Urgent' | 'Important' | 'General';

@@ -26,5 +26,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+        // Added minHeight: 1 to help with some web overflow issues where flex: 1 alone doesn't trigger scroll
+        minHeight: 1,
     },
 });
