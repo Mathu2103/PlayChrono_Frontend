@@ -19,6 +19,19 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
     const { setUser } = useUser();
 
     const handleSignIn = async () => {
+        // Hardcoded Admin Login (Bypass Backend)
+        if (email.toLowerCase() === 'admin@gmail.com' && password === 'admin') {
+            const adminUser = {
+                uid: 'admin_123',
+                email: 'admin@gmail.com',
+                username: 'Admin User',
+                role: 'admin'
+            };
+            setUser(adminUser);
+            navigation.reset({ index: 0, routes: [{ name: 'AdminDashboard' }] });
+            return;
+        }
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, Modal } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS, FONTS } from '../theme';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,8 +15,75 @@ const PlaceholderScreen = ({ title }: { title: string }) => (
     </View>
 );
 
-// --- Admin Home Component ---
-const AdminHomeScreen = ({ navigation }: { navigation: any }) => {
+import { useIsFocused } from '@react-navigation/native';
+import { API_BASE_URL } from '../config';
+import { useState, useEffect } from 'react';
+
+// --- Admin Dashboard Screen ---
+export const AdminDashboardScreen = ({ navigation }: NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>) => {
+    const isFocused = useIsFocused();
+    const [stats, setStats] = useState({
+        todayEvents: 0,
+        registeredCaptains: 0,
+        totalBookings: 0
+    });
+    const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+    const [loading, setLoading] = useState(false);
+    const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+    const handleLogout = () => {
+        setProfileModalVisible(false);
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'Welcome' }],
+        });
+    };
+
+    const fetchAdminData = async () => {
+        setLoading(true);
+        try {
+            // 1. Fetch Aggregated Stats
+            const statsRes = await fetch(`${API_BASE_URL}/api/admin/stats`);
+            const statsData = await statsRes.json();
+
+            if (statsData.success) {
+                setStats({
+                    todayEvents: statsData.stats.todayEvents,
+                    registeredCaptains: statsData.stats.registeredCaptains,
+                    totalBookings: statsData.stats.totalBookings
+                });
+            }
+
+            // 2. Fetch Recent Activity (using Today's bookings)
+            const todayRes = await fetch(`${API_BASE_URL}/api/bookings/today`);
+            const todayData = await todayRes.json();
+
+            // Map today's bookings to activity feed as a "Live Feed"
+            if (todayData.bookings) {
+                const activities = todayData.bookings.slice(0, 5).map((b: any, index: number) => ({
+                    id: index.toString(),
+                    title: `${b.groundName} Booking`,
+                    subtitle: `Booked by ${b.teamName || b.captainName}`,
+                    time: 'Today',
+                    status: 'Confirmed', // We only fetch confirmed ones
+                    type: 'calendar'
+                }));
+                setRecentActivity(activities);
+            }
+
+        } catch (error) {
+            console.error("Failed to fetch admin data", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isFocused) {
+            fetchAdminData();
+        }
+    }, [isFocused]);
 
     const QuickActionItem = ({ title, subtitle, icon, color, onPress }: any) => (
         <TouchableOpacity style={styles.actionItem} onPress={onPress}>
@@ -76,53 +143,42 @@ const AdminHomeScreen = ({ navigation }: { navigation: any }) => {
         <ScreenWrapper style={styles.container}>
             <StatusBar style="dark" />
 
-            {/* Top Bar with Logo/Title and Notification */}
+            {/* Top Bar with Profile Trigger */}
             <View style={styles.topBar}>
-                <View style={styles.logoContainer}>
-                    <Ionicons name="football" size={24} color={COLORS.primary} />
-                    <Text style={styles.logoText}>PlayChrono</Text>
-                </View>
-                <TouchableOpacity style={styles.notificationBtn}>
-                    <Ionicons name="notifications" size={24} color={COLORS.text} />
-                    <View style={styles.notificationDot} />
+                <TouchableOpacity style={styles.headerProfileContainer} onPress={() => setProfileModalVisible(true)}>
+                    <View style={styles.headerAvatar}>
+                        <Ionicons name="person" size={24} color={COLORS.textSecondary} />
+                    </View>
+                    <View>
+                        <Text style={styles.headerTitle}>Dashboard</Text>
+                        <Text style={styles.headerSubtitle}>System Overview</Text>
+                    </View>
                 </TouchableOpacity>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
                 {/* Profile Header */}
-                <View style={styles.profileSection}>
-                    <View style={styles.avatarContainer}>
-                        <Image
-                            source={{ uri: 'https://i.pravatar.cc/150?img=11' }}
-                            style={styles.avatarImage}
-                        />
-                        <View style={styles.onlineBadge} />
-                    </View>
-                    <View>
-                        <Text style={styles.greeting}>Good Morning, Admin</Text>
-                        <Text style={styles.role}>Manage your facility</Text>
-                    </View>
-                </View>
+                {/* Stats Row */}
 
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
                     <StatCard
-                        label="New Bookings"
-                        count="12"
-                        icon="ticket"
+                        label="Today's Events"
+                        count={loading ? "-" : stats.todayEvents.toString()}
+                        icon="calendar"
                         color={COLORS.primary}
                     />
                     <StatCard
-                        label="Pending"
-                        count="5"
-                        icon="time"
+                        label="Reg. Captains"
+                        count={loading ? "-" : stats.registeredCaptains.toString()}
+                        icon="people"
                         color="#FF9800"
                     />
                     <StatCard
-                        label="Open Slots"
-                        count="3"
-                        icon="radio-button-on"
+                        label="Total Bookings"
+                        count={loading ? "-" : stats.totalBookings.toString()}
+                        icon="bookmarks"
                         color="#9C27B0"
                     />
                 </View>
@@ -132,24 +188,24 @@ const AdminHomeScreen = ({ navigation }: { navigation: any }) => {
                 <View style={styles.actionsList}>
                     <QuickActionItem
                         title="Manage Bookings"
-                        subtitle="Review and approve requests"
+                        subtitle="Cancel or Delete bookings"
                         icon="calendar"
                         color="#2196F3"
-                        onPress={() => { }}
+                        onPress={() => navigation.navigate('AdminBookings')}
                     />
                     <QuickActionItem
-                        title="Ground Slots"
-                        subtitle="Add or modify availability"
-                        icon="create"
+                        title="Users Management"
+                        subtitle="View Captains details"
+                        icon="people"
                         color="#00BCD4"
-                        onPress={() => { }}
+                        onPress={() => navigation.navigate('AdminUsersList')}
                     />
                     <QuickActionItem
                         title="Announcements"
-                        subtitle="Post updates to students"
+                        subtitle="Write text notices"
                         icon="megaphone"
                         color="#3F51B5"
-                        onPress={() => navigation.navigate('NoticesList')}
+                        onPress={() => navigation.navigate('CreateNotice')}
                     />
                 </View>
 
@@ -161,76 +217,56 @@ const AdminHomeScreen = ({ navigation }: { navigation: any }) => {
                     </TouchableOpacity>
                 </View>
                 <View style={styles.activityList}>
-                    <ActivityItem
-                        title="Badminton Court A"
-                        subtitle="Booked by John Doe"
-                        time="2 min ago"
-                        status="Pending"
-                        type="court"
-                    />
-                    <ActivityItem
-                        title="Basketball Court"
-                        subtitle="Slot updated for Evening"
-                        time="3 hrs ago"
-                        status="Done"
-                        type="calendar"
-                    />
+                    {recentActivity.length > 0 ? (
+                        recentActivity.map((activity, index) => (
+                            <ActivityItem
+                                key={index}
+                                title={activity.title}
+                                subtitle={activity.subtitle}
+                                time={activity.time}
+                                status={activity.status}
+                                type={activity.type}
+                            />
+                        ))
+                    ) : (
+                        <Text style={{ color: COLORS.textSecondary, fontStyle: 'italic' }}>No recent activity to show.</Text>
+                    )}
                 </View>
 
+
+
+
             </ScrollView>
-        </ScreenWrapper>
-    );
-};
 
-// --- Tab Navigator ---
-const Tab = createBottomTabNavigator();
+            {/* Profile Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={profileModalVisible}
+                onRequestClose={() => setProfileModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setProfileModalVisible(false)}
+                >
+                    <View style={styles.profileModalContent}>
+                        <View style={styles.profileHeader}>
+                            <View style={styles.largeAvatarContainer}>
+                                <Ionicons name="person" size={60} color={COLORS.surface} />
+                            </View>
+                            <Text style={styles.profileName}>Admin</Text>
+                            <Text style={styles.profileTeam}>System Administrator</Text>
+                        </View>
 
-type Props = NativeStackScreenProps<RootStackParamList, 'AdminDashboard'>;
-
-export const AdminDashboardScreen: React.FC<Props> = () => {
-    return (
-        <Tab.Navigator
-            screenOptions={({ route }) => ({
-                headerShown: false,
-                tabBarShowLabel: true,
-                tabBarActiveTintColor: COLORS.primary,
-                tabBarInactiveTintColor: COLORS.textSecondary,
-                tabBarStyle: {
-                    height: 65,
-                    paddingBottom: 10,
-                    paddingTop: 10,
-                    backgroundColor: COLORS.surface,
-                    borderTopColor: COLORS.border,
-                    borderTopWidth: 1,
-                    elevation: 10,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: -2 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 4,
-                },
-                tabBarIcon: ({ focused, color, size }) => {
-                    let iconName: keyof typeof Ionicons.glyphMap = 'help-outline';
-
-                    if (route.name === 'Dashboard') {
-                        iconName = focused ? 'grid' : 'grid-outline';
-                    } else if (route.name === 'Bookings') {
-                        iconName = focused ? 'ticket' : 'ticket-outline';
-                    } else if (route.name === 'Profile') {
-                        iconName = focused ? 'person' : 'person-outline';
-                    }
-
-                    return <Ionicons name={iconName} size={24} color={color} />;
-                },
-                tabBarLabelStyle: {
-                    fontSize: 12,
-                    fontWeight: '500',
-                }
-            })}
-        >
-            <Tab.Screen name="Dashboard" component={AdminHomeScreen} />
-            <Tab.Screen name="Bookings" component={() => <PlaceholderScreen title="Bookings Management" />} />
-            <Tab.Screen name="Profile" component={() => <PlaceholderScreen title="Admin Profile" />} />
-        </Tab.Navigator>
+                        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                            <Text style={styles.logoutButtonText}>Logout</Text>
+                            <Ionicons name="log-out-outline" size={20} color={COLORS.surface} style={{ marginLeft: 8 }} />
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+        </ScreenWrapper >
     );
 };
 
@@ -240,12 +276,36 @@ const styles = StyleSheet.create({
         backgroundColor: '#F7F9FC',
     },
     topBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
         paddingHorizontal: SPACING.m,
         paddingVertical: SPACING.m,
         backgroundColor: COLORS.surface,
+    },
+    headerProfileContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#E0E0E0',
+        marginRight: SPACING.m,
+        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerAvatarImage: {
+        width: '100%',
+        height: '100%',
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
+    },
+    headerSubtitle: {
+        fontSize: 12,
+        color: COLORS.textSecondary,
     },
     logoContainer: {
         flexDirection: 'row',
@@ -450,5 +510,73 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: 10,
         fontWeight: 'bold',
+    },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: SPACING.l,
+    },
+    profileModalContent: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 24,
+        padding: 32,
+        width: '85%',
+        maxWidth: 340,
+        alignItems: 'center',
+        ...SHADOWS.card,
+    },
+    profileHeader: {
+        alignItems: 'center',
+        marginBottom: SPACING.xl,
+    },
+    largeAvatarContainer: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: SPACING.m,
+        borderWidth: 4,
+        borderColor: COLORS.surface,
+        overflow: 'hidden',
+        elevation: 5,
+    },
+    largeAvatar: {
+        width: '100%',
+        height: '100%',
+    },
+    profileName: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginBottom: 4,
+        textAlign: 'center',
+    },
+    profileTeam: {
+        fontSize: 16,
+        color: COLORS.primary,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    logoutButton: {
+        backgroundColor: COLORS.primary,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: SPACING.xl,
+        borderRadius: RADIUS.m,
+        width: '100%',
+        justifyContent: 'center',
+        elevation: 5,
+    },
+    logoutButtonText: {
+        color: COLORS.surface,
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: -4,
     },
 });

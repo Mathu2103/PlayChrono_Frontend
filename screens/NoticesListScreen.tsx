@@ -1,5 +1,6 @@
+// ... imports remain the same
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,34 +18,112 @@ interface BookingNotice {
     purpose: string;
     captainName: string;
     teamName: string;
+    type: 'booking'; // discriminator
 }
 
+interface TextNotice {
+    id: string;
+    title: string;
+    message: string;
+    createdAt: string;
+    createdBy: { name: string };
+    type: 'notice';
+}
+
+type FeedItem = BookingNotice | TextNotice;
+
 export const NoticesListScreen: React.FC<Props> = ({ navigation }) => {
-    const [notices, setNotices] = useState<BookingNotice[]>([]);
+    const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    const fetchNotices = async () => {
+    const fetchData = async () => {
         try {
-            setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/api/bookings/today`);
-            const data = await response.json();
+            // Fetch Bookings and Notices in parallel
+            const [bookingsRes, noticesRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/bookings/today`),
+                fetch(`${API_BASE_URL}/api/notices`)
+            ]);
 
-            if (data.success) {
-                setNotices(data.bookings);
-            } else {
-                console.error("Failed to fetch notices:", data.error);
+            const bookingsData = await bookingsRes.json();
+            const noticesData = await noticesRes.json();
+
+            let items: FeedItem[] = [];
+
+            // Process Notices
+            if (noticesData.success && noticesData.notices) {
+                const notices = noticesData.notices.map((n: any) => ({ ...n, type: 'notice' }));
+                items = [...items, ...notices];
             }
+
+            // Process Bookings
+            if (bookingsData.success && bookingsData.bookings) {
+                const bookings = bookingsData.bookings.map((b: any) => ({ ...b, type: 'booking' }));
+                items = [...items, ...bookings];
+            }
+
+            setFeedItems(items);
+
         } catch (error) {
-            console.error("Network error fetching notices:", error);
-            Alert.alert("Error", "Could not fetch today's schedule.");
+            console.error("Network error fetching feed:", error);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
     useEffect(() => {
-        fetchNotices();
+        fetchData();
     }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchData();
+    };
+
+    const renderNoticeCard = (item: TextNotice) => (
+        <View key={item.id} style={styles.noticeCard}>
+            <View style={styles.noticeHeader}>
+                <View style={styles.noticeIconContainer}>
+                    <Ionicons name="megaphone" size={20} color="#fff" />
+                </View>
+                <View style={styles.noticeHeaderText}>
+                    <Text style={styles.noticeTitle}>{item.title}</Text>
+                    <Text style={styles.noticeDate}>{new Date(item.createdAt).toDateString()}</Text>
+                </View>
+            </View>
+            <Text style={styles.noticeMessage}>{item.message}</Text>
+            <Text style={styles.noticeAuthor}>- {item.createdBy?.name || 'Admin'}</Text>
+        </View>
+    );
+
+    const renderBookingCard = (item: BookingNotice) => (
+        <View key={item.bookingId} style={styles.scheduleCard}>
+            <View style={styles.cardHeader}>
+                <Text style={styles.groundName}>{item.groundName}</Text>
+                <View style={styles.statusBadge}>
+                    <Text style={styles.statusText}>Booked</Text>
+                </View>
+            </View>
+
+            <View style={styles.cardBody}>
+                <View style={styles.infoRow}>
+                    <Ionicons name="time-outline" size={20} color={COLORS.primary} />
+                    <Text style={styles.infoText}>{item.timeSlots}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                    <Ionicons name="football-outline" size={20} color={COLORS.textSecondary} />
+                    <Text style={styles.infoText}>{item.purpose}</Text>
+                </View>
+                {item.teamName && (
+                    <View style={styles.infoRow}>
+                        <Ionicons name="people-outline" size={20} color={COLORS.textSecondary} />
+                        <Text style={styles.infoText}>{item.teamName}</Text>
+                    </View>
+                )}
+            </View>
+        </View>
+    );
 
     return (
         <ScreenWrapper style={styles.container}>
@@ -65,11 +144,10 @@ export const NoticesListScreen: React.FC<Props> = ({ navigation }) => {
                     <Text style={styles.title}>Daily Scoop</Text>
                     <Text style={styles.subtitle}>{new Date().toDateString()}</Text>
                 </View>
-                {/* Spacer to balance the back button */}
                 <View style={styles.headerSpacer} />
             </View>
 
-            {/* Schedule List */}
+            {/* List */}
             {loading ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
@@ -79,40 +157,17 @@ export const NoticesListScreen: React.FC<Props> = ({ navigation }) => {
                     style={styles.listContainer}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 >
-                    {notices.length > 0 ? (
-                        notices.map((item) => (
-                            <View key={item.bookingId} style={styles.scheduleCard}>
-                                <View style={styles.cardHeader}>
-                                    <Text style={styles.groundName}>{item.groundName}</Text>
-                                    <View style={styles.statusBadge}>
-                                        <Text style={styles.statusText}>Booked</Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.cardBody}>
-                                    <View style={styles.infoRow}>
-                                        <Ionicons name="time-outline" size={20} color={COLORS.primary} />
-                                        <Text style={styles.infoText}>{item.timeSlots}</Text>
-                                    </View>
-                                    <View style={styles.infoRow}>
-                                        <Ionicons name="football-outline" size={20} color={COLORS.textSecondary} />
-                                        <Text style={styles.infoText}>{item.purpose}</Text>
-                                    </View>
-                                    {item.teamName && (
-                                        <View style={styles.infoRow}>
-                                            <Ionicons name="people-outline" size={20} color={COLORS.textSecondary} />
-                                            <Text style={styles.infoText}>{item.teamName}</Text>
-                                        </View>
-                                    )}
-                                </View>
-                            </View>
-                        ))
+                    {feedItems.length > 0 ? (
+                        feedItems.map((item) => {
+                            if (item.type === 'notice') return renderNoticeCard(item as TextNotice);
+                            return renderBookingCard(item as BookingNotice);
+                        })
                     ) : (
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="calendar-outline" size={64} color={COLORS.textSecondary} style={{ marginBottom: 16, opacity: 0.5 }} />
-                            <Text style={styles.emptyText}>No bookings scheduled for today.</Text>
-                            <Text style={styles.emptySubText}>Check back tomorrow!</Text>
+                            <Ionicons name="notifications-off-outline" size={64} color={COLORS.textSecondary} style={{ marginBottom: 16, opacity: 0.5 }} />
+                            <Text style={styles.emptyText}>No updates for today.</Text>
                         </View>
                     )}
                 </ScrollView>
@@ -139,16 +194,13 @@ const styles = StyleSheet.create({
         height: 40,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: SPACING.s, // Reduced margin
-        zIndex: 1, // Ensure back button is clickable
+        marginRight: SPACING.s,
     },
     titleContainer: {
         flex: 1,
         alignItems: 'center',
     },
-    headerSpacer: {
-        width: 40, // Same width as backButton
-    },
+    headerSpacer: { width: 40 },
     title: {
         fontSize: 24,
         fontWeight: '700',
@@ -166,6 +218,20 @@ const styles = StyleSheet.create({
     listContent: {
         paddingBottom: SPACING.xl,
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyContainer: {
+        marginTop: 50,
+        alignItems: 'center',
+    },
+    emptyText: {
+        fontSize: 16,
+        color: COLORS.textSecondary,
+    },
+    // Schedule Card Styles (Existing)
     scheduleCard: {
         backgroundColor: COLORS.surface,
         borderRadius: RADIUS.m,
@@ -212,24 +278,52 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: COLORS.text,
     },
-    emptyContainer: {
-        marginTop: 50,
+    // Notice Card Styles (New)
+    noticeCard: {
+        backgroundColor: '#FFFDE7', // Light yellow background for announcements
+        borderRadius: RADIUS.m,
+        padding: SPACING.m,
+        marginBottom: SPACING.m,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FBC02D', // Strong yellow accent
+        ...SHADOWS.card,
+    },
+    noticeHeader: {
+        flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 8,
+    },
+    noticeIconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#4CAF50',
         justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
     },
-    emptyText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: COLORS.text,
-    },
-    emptySubText: {
-        fontSize: 14,
-        color: COLORS.textSecondary,
-        marginTop: 8,
-    },
-    loadingContainer: {
+    noticeHeaderText: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+    },
+    noticeTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2E7D32',
+    },
+    noticeDate: {
+        fontSize: 12,
+        color: '#666',
+    },
+    noticeMessage: {
+        fontSize: 15,
+        color: '#333',
+        lineHeight: 22,
+        marginBottom: 8,
+    },
+    noticeAuthor: {
+        textAlign: 'right',
+        fontSize: 12,
+        color: '#555',
+        fontStyle: 'italic',
     },
 });
