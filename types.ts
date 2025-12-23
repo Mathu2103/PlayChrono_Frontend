@@ -10,6 +10,9 @@ export type RootStackParamList = {
     CaptainCalendar: undefined;
     AdminDashboard: undefined;
     NoticesList: undefined;
+    AdminUsersList: undefined; // New
+    CreateNotice: undefined; // New
+    AdminBookings: undefined; // New
 };
 
 export type NoticePriority = 'Urgent' | 'Important' | 'General';

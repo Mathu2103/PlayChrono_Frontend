@@ -11,6 +11,9 @@ import { PlayerDashboardScreen } from './screens/PlayerDashboardScreen';
 import { CaptainDashboardScreen } from './screens/CaptainDashboardScreen';
 import { AdminDashboardScreen } from './screens/AdminDashboardScreen';
 import { NoticesListScreen } from './screens/NoticesListScreen';
+import { AdminUsersListScreen } from './screens/AdminUsersListScreen';
+import { AdminCreateNoticeScreen } from './screens/AdminCreateNoticeScreen';
+import { AdminBookingsScreen } from './screens/AdminBookingsScreen';
 import { RootStackParamList } from './types';
 import { StatusBar } from 'expo-status-bar';
 
@@ -38,6 +41,9 @@ export default function App() {
             <Stack.Screen name="CaptainDashboard" component={CaptainDashboardScreen} />
             <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
             <Stack.Screen name="NoticesList" component={NoticesListScreen} />
+            <Stack.Screen name="AdminUsersList" component={AdminUsersListScreen} />
+            <Stack.Screen name="CreateNotice" component={AdminCreateNoticeScreen} />
+            <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} />
           </Stack.Navigator>
           <StatusBar style="auto" />
         </NavigationContainer>

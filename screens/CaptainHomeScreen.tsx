@@ -20,6 +20,14 @@ interface Ground {
     availableCount: number;
 }
 
+interface TextNotice {
+    id: string;
+    title: string;
+    message: string;
+    createdAt: string;
+    createdBy: { name: string };
+}
+
 
 
 
@@ -27,7 +35,24 @@ interface Ground {
 export const CaptainHomeScreen: React.FC = () => {
     const navigation = useNavigation<any>();
     const { user, setUser } = useUser();
-    const [showNotifications, setShowNotifications] = useState(false);
+    const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+    const [notices, setNotices] = useState<TextNotice[]>([]);
+    const [loadingNotices, setLoadingNotices] = useState(false);
+
+    const fetchNotices = async () => {
+        try {
+            setLoadingNotices(true);
+            const response = await fetch(`${API_BASE_URL}/api/notices`);
+            const data = await response.json();
+            if (data.success && data.notices) {
+                setNotices(data.notices);
+            }
+        } catch (error) {
+            console.error("Failed to fetch notices", error);
+        } finally {
+            setLoadingNotices(false);
+        }
+    };
     const [profileModalVisible, setProfileModalVisible] = useState(false);
     const [selectedDate, setSelectedDate] = useState(() => {
         const d = new Date();
@@ -157,10 +182,7 @@ export const CaptainHomeScreen: React.FC = () => {
         });
     };
 
-    const NOTIFICATIONS = [
-        { id: '1', message: 'Main Ground A is available tomorrow at 4 PM.', time: '10m ago', read: false },
-        { id: '2', message: 'New slot opened at Indoor Court.', time: '1h ago', read: true },
-    ];
+
 
     return (
         <ScreenWrapper style={styles.screen}>
@@ -194,7 +216,10 @@ export const CaptainHomeScreen: React.FC = () => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.iconButton}
-                        onPress={() => setShowNotifications(!showNotifications)}
+                        onPress={() => {
+                            setNotificationModalVisible(true);
+                            fetchNotices();
+                        }}
                     >
                         <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
                     </TouchableOpacity>
@@ -202,22 +227,7 @@ export const CaptainHomeScreen: React.FC = () => {
             </View >
 
             {/* Notification Dropdown */}
-            {
-                showNotifications && (
-                    <View style={styles.notificationDropdown}>
-                        <Text style={styles.dropdownTitle}>Notifications</Text>
-                        {NOTIFICATIONS.map(note => (
-                            <TouchableOpacity key={note.id} style={[styles.notificationItem, !note.read && styles.unreadNotification]}>
-                                <View style={styles.notificationContent}>
-                                    <Text style={styles.notificationMessage}>{note.message}</Text>
-                                    <Text style={styles.notificationTime}>{note.time}</Text>
-                                </View>
-                                {!note.read && <View style={styles.unreadDot} />}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                )
-            }
+
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
 
@@ -394,6 +404,53 @@ export const CaptainHomeScreen: React.FC = () => {
                     </View>
                 </View>
             </Modal>
+            {/* Notification Popup Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={notificationModalVisible}
+                onRequestClose={() => setNotificationModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.notificationModalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Announcements</Text>
+                            <TouchableOpacity onPress={() => setNotificationModalVisible(false)} style={styles.closeButton}>
+                                <Ionicons name="close" size={24} color={COLORS.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {loadingNotices ? (
+                            <ActivityIndicator size="large" color={COLORS.primary} />
+                        ) : (
+                            <ScrollView style={styles.notificationList} showsVerticalScrollIndicator={false}>
+                                {notices.length > 0 ? (
+                                    notices.map((item) => (
+                                        <View key={item.id} style={styles.noticeCard}>
+                                            <View style={styles.noticeHeader}>
+                                                <View style={styles.noticeIconContainer}>
+                                                    <Ionicons name="megaphone" size={20} color="#fff" />
+                                                </View>
+                                                <View style={styles.noticeHeaderText}>
+                                                    <Text style={styles.noticeTitle}>{item.title}</Text>
+                                                    <Text style={styles.noticeDate}>{new Date(item.createdAt).toDateString()}</Text>
+                                                </View>
+                                            </View>
+                                            <Text style={styles.noticeMessage}>{item.message}</Text>
+                                            <Text style={styles.noticeAuthor}>- {item.createdBy?.name || 'Admin'}</Text>
+                                        </View>
+                                    ))
+                                ) : (
+                                    <View style={styles.emptyContainer}>
+                                        <Text style={styles.emptyText}>No new announcements.</Text>
+                                    </View>
+                                )}
+                            </ScrollView>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+
             {/* Profile Modal */}
             <Modal
                 animationType="fade"
@@ -700,55 +757,76 @@ const styles = StyleSheet.create({
     },
 
     // Notification Styles
-    notificationDropdown: {
-        position: 'absolute',
-        top: 80,
-        right: SPACING.m,
-        width: 300,
+    // Notification Modal Styles
+    notificationModalContent: {
         backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.m,
-        ...SHADOWS.card,
-        zIndex: 1000,
+        borderRadius: RADIUS.l,
         padding: SPACING.m,
-        borderWidth: 1,
-        borderColor: COLORS.border,
+        width: '90%',
+        maxHeight: '80%',
+        ...SHADOWS.card,
     },
-    dropdownTitle: {
+    closeButton: {
+        padding: 4,
+    },
+    notificationList: {
+        marginTop: SPACING.s,
+    },
+    emptyContainer: {
+        padding: SPACING.l,
+        alignItems: 'center',
+    },
+    emptyText: {
+        color: COLORS.textSecondary,
         fontSize: 16,
-        fontWeight: 'bold',
-        color: COLORS.text,
-        marginBottom: SPACING.s,
     },
-    notificationItem: {
+    // Notice Card Styles (Yellow Theme)
+    noticeCard: {
+        backgroundColor: '#FFFDE7', // Light yellow background
+        borderRadius: RADIUS.m,
+        padding: SPACING.m,
+        marginBottom: SPACING.m,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FBC02D', // Strong yellow accent
+        elevation: 2,
+    },
+    noticeHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: SPACING.s,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        marginBottom: 8,
     },
-    unreadNotification: {
-        backgroundColor: '#F0F7FF', // Very light blue for unread
-        marginHorizontal: -SPACING.m,
-        paddingHorizontal: SPACING.m,
+    noticeIconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#FBC02D',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
     },
-    notificationContent: {
+    noticeHeaderText: {
         flex: 1,
     },
-    notificationMessage: {
-        fontSize: 14,
-        color: COLORS.text,
-        marginBottom: 2,
+    noticeTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#F57F17',
     },
-    notificationTime: {
+    noticeDate: {
         fontSize: 12,
-        color: COLORS.textSecondary,
+        color: '#666',
     },
-    unreadDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: COLORS.primary,
-        marginLeft: SPACING.s,
+    noticeMessage: {
+        fontSize: 14,
+        color: '#333',
+        lineHeight: 20,
+        marginBottom: 8,
+    },
+    noticeAuthor: {
+        textAlign: 'right',
+        fontSize: 12,
+        color: '#555',
+        fontStyle: 'italic',
     },
 
     // Modal Styles
