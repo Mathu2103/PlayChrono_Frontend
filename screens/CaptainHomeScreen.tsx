@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Mod
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useUser } from '../context/UserContext';
 import { API_BASE_URL } from '../config';
 
@@ -34,11 +34,13 @@ interface TextNotice {
 
 export const CaptainHomeScreen: React.FC = () => {
     const navigation = useNavigation<any>();
+    const route = useRoute<any>();
     const { user, setUser } = useUser();
     const [notificationModalVisible, setNotificationModalVisible] = useState(false);
     const [notices, setNotices] = useState<TextNotice[]>([]);
     const [loadingNotices, setLoadingNotices] = useState(false);
 
+    // ... (fetchNotices remains here)
     const fetchNotices = async () => {
         try {
             setLoadingNotices(true);
@@ -53,14 +55,27 @@ export const CaptainHomeScreen: React.FC = () => {
             setLoadingNotices(false);
         }
     };
+
     const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+    // Initialize selectedDate from params if available, else default to today
     const [selectedDate, setSelectedDate] = useState(() => {
+        if (route.params?.date) {
+            return route.params.date;
+        }
         const d = new Date();
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     });
+
+    // Update selectedDate if params change while screen is already mounted/focused
+    useEffect(() => {
+        if (route.params?.date) {
+            setSelectedDate(route.params.date);
+        }
+    }, [route.params?.date]);
 
     // API Data State
     const [grounds, setGrounds] = useState<Ground[]>([]);

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -8,19 +10,41 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
-export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
-    const [email, setEmail] = useState('');
+import { useRoute, RouteProp } from '@react-navigation/native';
 
-    const handleResetPassword = () => {
+// ...
+
+export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
+    const route = useRoute<RouteProp<RootStackParamList, 'ForgotPassword'>>();
+    const initialEmail = route.params?.email || '';
+    const [email, setEmail] = useState(initialEmail);
+
+    const handleResetPassword = async () => {
         if (!email) {
             Alert.alert("Error", "Please enter your email address.");
             return;
         }
-        // Simulate API call
-        setTimeout(() => {
+
+        try {
+            // 1. Verify email exists in OUR database first
+            const checkResponse = await fetch(`${API_BASE_URL}/api/users/check-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            if (checkResponse.status === 404) {
+                // Explicitly block if email not found in backend
+                Alert.alert("Error", "This email is not registered with us. Please use the email you signed up with.");
+                return;
+            }
+
+            // 2. Only if backend confirms, trigger Firebase Reset
+            await sendPasswordResetEmail(auth, email);
             Alert.alert(
                 "Reset Link Sent",
                 "If an account exists for this email, you will receive a password reset link shortly.",
@@ -28,7 +52,19 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
                     { text: "OK", onPress: () => navigation.navigate('SignIn') }
                 ]
             );
-        }, 1000);
+        } catch (error: any) {
+            let errorMessage = "Something went wrong. Please try again.";
+
+            if (error.code === 'auth/user-not-found') {
+                errorMessage = "This email is not registered with us. Please use the email you signed up with.";
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = "Please enter a valid email address.";
+            } else {
+                errorMessage = error.message || errorMessage;
+            }
+
+            Alert.alert("Error", errorMessage);
+        }
     };
 
     return (

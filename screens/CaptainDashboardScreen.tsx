@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CaptainHomeScreen } from './CaptainHomeScreen';
 import { CaptainBookingsScreen } from './CaptainBookingsScreen';
-import { CaptainTeamScreen } from './CaptainTeamScreen';
+
 import { CaptainProfileScreen } from './CaptainProfileScreen';
 import { NoticesListScreen } from './NoticesListScreen';
 import { COLORS } from '../theme';
@@ -40,8 +40,8 @@ const TabIcon = ({ focused, label }: { focused: boolean; label: string }) => {
         iconName = focused ? 'calendar' : 'calendar-outline';
     } else if (label === 'My Bookings') {
         iconName = focused ? 'ticket' : 'ticket-outline';
-    } else if (label === 'NoticesList') {
-        iconName = focused ? 'megaphone' : 'megaphone-outline';
+
+
     } else if (label === 'Profile') {
         iconName = focused ? 'person' : 'person-outline';
     }
@@ -76,11 +76,7 @@ export const CaptainDashboardScreen: React.FC = () => {
         >
             <Tab.Screen name="Schedule" component={ScheduleStackNavigator} />
             <Tab.Screen name="My Bookings" component={CaptainBookingsScreen} />
-            <Tab.Screen
-                name="NoticesList"
-                component={NoticesListScreen}
-                options={{ tabBarLabel: 'Notices' }}
-            />
+
             <Tab.Screen name="Profile" component={CaptainProfileScreen} />
         </Tab.Navigator>
     );

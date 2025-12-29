@@ -4,8 +4,8 @@ export type RootStackParamList = {
     Welcome: undefined;
     SignIn: undefined;
     SignUp: undefined;
-    ForgotPassword: undefined;
-    PlayerDashboard: undefined;
+    ForgotPassword: { email: string };
+
     CaptainDashboard: undefined;
     CaptainCalendar: undefined;
     AdminDashboard: undefined;
